@@ -164,7 +164,7 @@ async function atualizarDropdownProfissionais() {
         const optionsHTML = '<option value="">Selecione o Médico / Especialista...</option>' + 
             usuarios.map(u => {
                 const nome = u.nome || u.username || 'Profissional Desconhecido';
-                return `<option value="${u.crm_coren}">${nome}</option>`;
+                return `<option value="${u.crm_coren}">${nome} (${u.crm_coren || 'S/N'})</option>`;
             }).join('');
 
         selectProfissional.innerHTML = optionsHTML;
@@ -496,7 +496,7 @@ async function renderizarTabelaConsultas() {
                 <tr>
                     <td><strong class="text-dark">${c.nomePaciente}</strong></td>
                     <td><i class="bi bi-calendar3 text-primary"></i> ${formatarDataBR(c.data)} às <strong>${c.horario}</strong></td>
-                    <td><span class="badge bg-secondary">${c.profissional}</span></td>
+                    <td><span class="badge bg-secondary">${c.profissional} (${c.crm_coren || 'S/N'})</span></td>
                     <td><span class="badge ${obterClasseStatusConsulta(c.status)}">${c.status}</span></td>
                     <td class="text-end text-nowrap">
                         <div class="btn-group btn-group-sm">
@@ -543,7 +543,7 @@ async function renderizarTabelaConsultasConcluidas() {
                 <tr>
                     <td><strong class="text-dark">${c.nomePaciente}</strong></td>
                     <td><i class="bi bi-calendar-check text-secondary"></i> ${formatarDataBR(c.data)} às <strong>${c.horario}</strong></td>
-                    <td><span class="badge bg-secondary">${c.profissional}</span></td>
+                    <td><span class="badge bg-secondary">${c.profissional} (${c.crm_coren || 'S/N'})</span></td>
                     <td><span class="badge ${obterClasseStatusConsulta(c.status)}">${c.status}</span></td>
                     <td class="text-end text-nowrap">
                         <button class="btn btn-sm btn-outline-secondary" onclick="alterarStatusConsulta(${c.id}, 'Agendado')" title="Reativar para o Mural"><i class="bi bi-arrow-counterclockwise"></i> Reativar</button>
@@ -560,15 +560,15 @@ async function renderizarMinhasConsultas() {
     const tabela = document.getElementById('tabelaMinhasConsultas');
     if (!tabela) return;
 
-    const meuNome = obterNomeProfissionalLogado();
-    if (!meuNome) return;
+    const meuCrm = obterCRMCORENProfissionalLogado();
+    if (!meuCrm) return;
 
     try {
         const res = await fetch('/api/consultas?status=ativas');
         if (!res.ok) return;
         
         const todasAtivas = await res.json();
-        const minhasAtivas = todasAtivas.filter(c => c.profissional === meuNome);
+        const minhasAtivas = todasAtivas.filter(c => c.crm_coren === meuCrm);
 
         tabela.innerHTML = '';
         if (minhasAtivas.length === 0) {
@@ -601,15 +601,15 @@ async function renderizarMinhasConsultasConcluidas() {
     const tabela = document.getElementById('tabelaMinhasConsultasConcluidas');
     if (!tabela) return;
 
-    const meuNome = obterNomeProfissionalLogado();
-    if (!meuNome) return;
+    const meuCrm = obterCRMCORENProfissionalLogado();
+    if (!meuCrm) return;
 
     try {
         const res = await fetch('/api/consultas?status=concluidas');
         if (!res.ok) return;
         
         const todasConcluidas = await res.json();
-        const minhasConcluidas = todasConcluidas.filter(c => c.profissional === meuNome);
+        const minhasConcluidas = todasConcluidas.filter(c => c.crm_coren === meuCrm);
 
         tabela.innerHTML = '';
         if (minhasConcluidas.length === 0) {
@@ -646,10 +646,9 @@ async function atualizarPainelAtendimentos() {
         const prontuarios = await resProntuarios.json();
 
         const crmLogado = obterCRMCORENProfissionalLogado();
-        const nomeProfissional = obterNomeProfissionalLogado();
 
-        const ativasDoProfissional = ativas.filter(c => c.profissional === nomeProfissional);
-        const concluidasDoProfissional = concluidas.filter(c => c.profissional === nomeProfissional);
+        const ativasDoProfissional = ativas.filter(c => c.crm_coren === crmLogado);
+        const concluidasDoProfissional = concluidas.filter(c => c.crm_coren === crmLogado);
         const prontuariosDoProfissional = prontuarios.filter(p => p.crm_coren === crmLogado);
 
         if (document.getElementById('count-consultas-ativas')) document.getElementById('count-consultas-ativas').textContent = ativasDoProfissional.length;

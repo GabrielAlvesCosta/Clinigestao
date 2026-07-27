@@ -73,12 +73,16 @@
                 <span class="badge bg-success ms-3" style="font-size: 0.75rem;"><i class="bi bi-shield-lock-fill"></i> LGPD Protected</span>
             </a>
             <div class="d-flex align-items-center gap-3">
-                <span id="user-display-name" class="text-white small fw-medium">Profissional</span>
+                <span id="user-display-name" class="text-white small fw-medium">
+                    {{ session['usuario'].get('nome', 'Profissional') }}
+                </span>
+            </div>
                 
-                <!-- NOVO BOTÃO DE USUÁRIOS ADICIONADO AQUI -->
-                <a href="{{ url_for('usuarios') }}" class="nav-link text-info fw-bold d-flex align-items-center gap-1">
-                    <i class="bi bi-people-fill"></i> Usuários
-                </a>
+                {% if usuario and usuario.admin|string|lower == 'sim' %}
+                    <a href="{{ url_for('usuarios') }}" class="nav-link text-info fw-bold d-flex align-items-center gap-1">
+                         <i class="bi bi-people-fill"></i> Usuários
+                    </a>
+                {% endif %}
 
                 <a href="/logout" class="nav-link text-danger fw-bold" onclick="limparRastrosLocais()">
                     <i class="bi bi-box-arrow-right"></i> Sair
@@ -132,11 +136,13 @@
                             <i class="bi bi-folder2-open"></i> Histórico de Prontuários
                         </button>
                     </li>
+                    {% if usuario and usuario.admin|string|lower in ['sim', 'true', '1'] %}
                     <li class="nav-item">
                         <button class="nav-link text-danger" id="tab-auditoria" data-bs-toggle="tab" data-bs-target="#pane-auditoria" type="button" role="tab">
                             <i class="bi bi-shield-lock-fill"></i> Auditoria
                         </button>
                     </li>
+                    {% endif %}
                 </ul>
 
                 <div class="tab-content bg-white p-4 rounded shadow-sm" id="dashboardTabsContent">
@@ -543,7 +549,7 @@
                         </div>
                     </div>
 
-                    <!-- ABA: AUDITORIA -->
+                    {% if usuario and usuario.admin|string|lower in ['sim', 'true', '1'] %}
                     <div class="tab-pane fade" id="pane-auditoria" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="text-danger mb-0"><i class="bi bi-shield-check"></i> Auditoria de Acessos a Prontuários</h4>
@@ -564,7 +570,8 @@
                             </table>
                         </div>
                     </div>
-
+                    {% endif %} 
+                
                 </div>
             </div>
         </div>

@@ -74,6 +74,12 @@
             </a>
             <div class="d-flex align-items-center gap-3">
                 <span id="user-display-name" class="text-white small fw-medium">Profissional</span>
+                
+                <!-- NOVO BOTÃO DE USUÁRIOS ADICIONADO AQUI -->
+                <a href="{{ url_for('usuarios') }}" class="nav-link text-info fw-bold d-flex align-items-center gap-1">
+                    <i class="bi bi-people-fill"></i> Usuários
+                </a>
+
                 <a href="/logout" class="nav-link text-danger fw-bold" onclick="limparRastrosLocais()">
                     <i class="bi bi-box-arrow-right"></i> Sair
                 </a>

@@ -12,7 +12,7 @@ body {
     align-items: center;      /* Centraliza na vertical */
     min-height: 100vh;        /* Ocupa a altura inteira da tela */
     padding: 24px;
-    background-image: url("/Static/img/fundo.jpeg");
+    background-image: url("/static/img/fundo.jfif");
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;

@@ -126,7 +126,7 @@ def post_consulta():
                 en(data.get('nomePaciente')), 
                 data.get('data'),
                 data.get('horario'), 
-                en(crm_coren), 
+                usuario['crm_coren'], 
                 data.get('status', 'Agendado')
             ))
             db.commit()
@@ -203,10 +203,22 @@ def post_prontuario():
             crm_coren_logado = usuario_sessao.get('crm_coren') or data.get('crm_coren', 'S/N')
             nome_profissional = usuario_sessao.get('nome', 'Profissional')
             
+            # 1. Busca a string exata do CRM salva no banco de dados
+            db_crm_coren = None
+            rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
+            for row in rows:
+                if de(row['crm_coren']) == crm_coren_logado:
+                    db_crm_coren = row['crm_coren']
+                    break
+            
+            if not db_crm_coren:
+                return jsonify({"error": f"O profissional com CRM/COREN '{crm_coren_logado}' não está cadastrado no sistema."}), 400
+
             carimbo_enviado = data.get('carimboAssinatura')
             carimbo_sessao = usuario_sessao.get('assinatura')
             assinatura_final = carimbo_enviado if (carimbo_enviado and carimbo_enviado.strip() != '') else (carimbo_sessao or '')
-            crm_coren_encrypted = en(crm_coren_logado)
+            
+            # Criptografa apenas a assinatura. O CRM já pegamos do banco.
             assinatura_final_encrypted = en(assinatura_final)
 
             cursor = db.execute('''
@@ -244,8 +256,8 @@ def post_prontuario():
                 en(data.get('neuroOutros')), 
                 en(data.get('hipotese')), 
                 en(data.get('conduta')),
-                crm_coren_encrypted, 
-                crm_coren_encrypted, 
+                db_crm_coren, # <-- CORREÇÃO: Usa o valor exato do banco (Tabela Prontuários)
+                db_crm_coren, # <-- CORREÇÃO: Usa o valor exato do banco (Tabela Prontuários)
                 assinatura_final_encrypted
             ))
             
@@ -258,7 +270,7 @@ def post_prontuario():
             ''', (
                 data_hora_atual,
                 nome_profissional,
-                crm_coren_encrypted,
+                db_crm_coren, # <-- CORREÇÃO: Usa o valor exato do banco (Tabela Auditoria)
                 'Criação',
                 prontuario_id,
                 en(data.get('nomePaciente', 'N/A'))
@@ -317,9 +329,20 @@ def get_prontuario_por_id(id):
             prontuario['registroProfissional'] = de(prontuario.get('registroProfissional'))
             prontuario['carimboAssinatura'] = de(prontuario.get('carimboAssinatura'))
             
+            # Preparação para Auditoria
             usuario_sessao = session.get('usuario', {})
             nome_prof = usuario_sessao.get('nome', 'Profissional')
-            crm_logado = usuario_sessao.get('crm_coren', 'N/A')
+            crm_logado_plain = usuario_sessao.get('crm_coren')
+            
+            # Busca a string criptografada exata do CRM no banco de dados
+            db_crm_coren = None
+            if crm_logado_plain:
+                rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
+                for row in rows:
+                    if de(row['crm_coren']) == crm_logado_plain:
+                        db_crm_coren = row['crm_coren']
+                        break
+            
             data_hora_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             
             db.execute('''
@@ -328,7 +351,7 @@ def get_prontuario_por_id(id):
             ''', (
                 data_hora_atual,
                 nome_prof,
-                crm_logado,
+                db_crm_coren, # <-- CORREÇÃO AQUI: Usa o valor criptografado exato do banco
                 'Visualização',
                 id,
                 en(prontuario['nomePaciente'])

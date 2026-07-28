@@ -6,51 +6,7 @@
     <title>Painel Clínico - Sistema PEP & Gestão Integrada</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
-        .nav-tabs .nav-link { color: #495057; font-weight: 500; }
-        .nav-tabs .nav-link.active { font-weight: bold; }
-        .object-fit-cover { object-fit: cover; }
-
-        /* === CONFIGURAÇÃO DE SCROLLBAR ELEGANTE PARA ATÉ 10 LINHAS === */
-        .table-scroll-container {
-            max-height: 560px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-        }
-        .table-scroll-container thead th {
-            position: sticky;
-            top: 0;
-            background-color: #f8f9fa !important;
-            z-index: 2;
-            box-shadow: inset 0 -1px 0 #dee2e6;
-        }
-        .table-scroll-container::-webkit-scrollbar { width: 6px; }
-        .table-scroll-container::-webkit-scrollbar-track { background: #f1f1f1; }
-        .table-scroll-container::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-        .table-scroll-container::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-
-        /* === CONFIGURAÇÃO DE SCROLLBAR PARA ATÉ 4 LINHAS (ABA PERFIL) === */
-        .table-scroll-short {
-            max-height: 260px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-        }
-        .table-scroll-short thead th {
-            position: sticky;
-            top: 0;
-            background-color: #f8f9fa !important;
-            z-index: 2;
-            box-shadow: inset 0 -1px 0 #dee2e6;
-        }
-        .table-scroll-short::-webkit-scrollbar { width: 6px; }
-        .table-scroll-short::-webkit-scrollbar-track { background: #f1f1f1; }
-        .table-scroll-short::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-        .table-scroll-short::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-    </style>
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
     <script>
         window.usuarioLogado = {
             id: "{{ usuario.id if usuario and usuario.id else '' }}",
@@ -65,28 +21,30 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm" style="background-color: #1F7F37 !important;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center gap-2" href="#">
                 <i class="bi bi-heart-pulse-fill text-danger"></i>
-                <span>CliniSys PEP</span>
-                <span class="badge bg-success ms-3" style="font-size: 0.75rem;"><i class="bi bi-shield-lock-fill"></i> LGPD Protected</span>
+                <span class="fs-4 fw-medium">CliniSys PEP</span>
+                <span class="badge bg-warning text-dark badge-lgpd-hover ms-3">
+                    <i class="bi bi-shield-lock-fill"></i> LGPD Protected
+                </span>
             </a>
             <div class="d-flex align-items-center gap-3">
-                <span id="user-display-name" class="text-white small fw-medium">
-                    {{ session['usuario'].get('nome', 'Profissional') }}
+                <span id="user-display-name" class="text-white fs-3 fw-medium align-middle">
+                    Bem vindo, {{ session['usuario'].get('nome', 'Profissional') }}!
                 </span>
             </div>
                 
                 {% if usuario and usuario.admin|string|lower == 'sim' %}
-                    <a href="{{ url_for('usuarios') }}" class="nav-link text-info fw-bold d-flex align-items-center gap-1">
-                         <i class="bi bi-people-fill"></i> Usuários
+                    <a href="{{ url_for('usuarios') }}" class="btn btn-primary btn-sm rounded-pill fw-bold px-3 d-flex align-items-center gap-1">
+                        <i class="bi bi-people-fill"></i> Usuários
                     </a>
                 {% endif %}
 
-                <a href="/logout" class="nav-link text-danger fw-bold" onclick="limparRastrosLocais()">
-                    <i class="bi bi-box-arrow-right"></i> Sair
-                </a>
+                    <a href="/logout" class="btn btn-danger btn-sm rounded-pill fw-bold px-3" onclick="limparRastrosLocais()">
+                         <i class="bi bi-box-arrow-right"></i> Sair
+                    </a>
             </div>
         </div>
     </nav>
@@ -97,48 +55,48 @@
                 
                 <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active" id="tab-perfil-aba" data-bs-toggle="tab" data-bs-target="#pane-perfil" type="button" role="tab">
+                        <button class="nav-link active fs-4" id="tab-perfil-aba" data-bs-toggle="tab" data-bs-target="#pane-perfil" type="button" role="tab">
                             <i class="bi bi-person-vcard"></i> Meu Perfil
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-novo-paciente" data-bs-toggle="tab" data-bs-target="#pane-novo-paciente" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-novo-paciente" data-bs-toggle="tab" data-bs-target="#pane-novo-paciente" type="button" role="tab">
                             <i class="bi bi-person-plus"></i> Cadastrar Paciente
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-pacientes-cadastrados" data-bs-toggle="tab" data-bs-target="#pane-pacientes-lista" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-pacientes-cadastrados" data-bs-toggle="tab" data-bs-target="#pane-pacientes-lista" type="button" role="tab">
                             <i class="bi bi-people"></i> Pacientes Cadastrados
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-nova-consulta" data-bs-toggle="tab" data-bs-target="#pane-nova-consulta" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-nova-consulta" data-bs-toggle="tab" data-bs-target="#pane-nova-consulta" type="button" role="tab">
                             <i class="bi bi-calendar-plus"></i> Agendar Consulta
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-consultas-agendadas" data-bs-toggle="tab" data-bs-target="#pane-consultas-lista" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-consultas-agendadas" data-bs-toggle="tab" data-bs-target="#pane-consultas-lista" type="button" role="tab">
                             <i class="bi bi-calendar-check"></i> Consultas Agendadas
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-consultas-concluidas" data-bs-toggle="tab" data-bs-target="#pane-consultas-concluidas" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-consultas-concluidas" data-bs-toggle="tab" data-bs-target="#pane-consultas-concluidas" type="button" role="tab">
                             <i class="bi bi-calendar-x"></i> Consultas Concluídas
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-novo-prontuario" data-bs-toggle="tab" data-bs-target="#pane-novo-prontuario" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-novo-prontuario" data-bs-toggle="tab" data-bs-target="#pane-novo-prontuario" type="button" role="tab">
                             <i class="bi bi-file-earmark-medical"></i> Novo Prontuário (PEP)
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-historico-prontuarios" data-bs-toggle="tab" data-bs-target="#pane-historico-prontuarios" type="button" role="tab">
+                        <button class="nav-link fs-4" id="tab-historico-prontuarios" data-bs-toggle="tab" data-bs-target="#pane-historico-prontuarios" type="button" role="tab">
                             <i class="bi bi-folder2-open"></i> Histórico de Prontuários
                         </button>
                     </li>
                     {% if usuario and usuario.admin|string|lower in ['sim', 'true', '1'] %}
                     <li class="nav-item">
-                        <button class="nav-link text-danger" id="tab-auditoria" data-bs-toggle="tab" data-bs-target="#pane-auditoria" type="button" role="tab">
+                        <button class="nav-link text-danger fs-4" id="tab-auditoria" data-bs-toggle="tab" data-bs-target="#pane-auditoria" type="button" role="tab">
                             <i class="bi bi-shield-lock-fill"></i> Auditoria
                         </button>
                     </li>

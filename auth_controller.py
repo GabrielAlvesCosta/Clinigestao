@@ -2,6 +2,7 @@ import os
 import time
 from werkzeug.utils import secure_filename
 from flask import render_template, request, redirect, url_for, session
+from models import de
 from usuario import Usuario
 
 class AuthController:
@@ -25,18 +26,28 @@ class AuthController:
             if Usuario.email_existe(email):
                 return render_template("cadastro.html", error="Email já cadastrado")
 
-            # Upload da Assinatura Digital
             file = request.files.get("assinatura")
             assinatura_filename = ""
             if file and file.filename != "":
                 filename = f"{int(time.time())}_{secure_filename(file.filename)}"
-                upload_path = os.path.join("Static", "uploads")
+                upload_path = os.path.join("static", "uploads")
                 os.makedirs(upload_path, exist_ok=True)
                 file.save(os.path.join(upload_path, filename))
                 assinatura_filename = filename
 
-            usuario = Usuario(nome, email, cargo, crm_coren, senha, admin, assinatura_filename)
-            usuario.salvar()
+            try:
+                usuario = Usuario(nome, email, cargo, crm_coren, senha, admin, assinatura_filename)
+                usuario.salvar()
+            except ValueError as exc:
+                return render_template(
+                    "cadastro.html",
+                    error=str(exc),
+                    nome=nome,
+                    email=email,
+                    cargo=cargo,
+                    crm_coren=crm_coren,
+                    admin=admin,
+                )
             return redirect(url_for("login"))
 
         return render_template("cadastro.html")
@@ -45,11 +56,10 @@ class AuthController:
     def login():
         if "usuario" in session:
             usuario = session["usuario"]
-            # Acesso seguro ao admin na sessão (que sempre armazena como dicionário)
             admin_value = str(usuario.get("admin", "nao")).strip().lower()
             if admin_value == "sim":
                 return redirect(url_for("usuarios"))
-            return redirect(url_for("teste"))
+            return redirect(url_for("dashboard"))
 
         if request.method == "POST":
             email = request.form.get("email", "").strip()
@@ -68,7 +78,7 @@ class AuthController:
                         "nome": usuario["nome"],
                         "email": usuario["email"],
                         "cargo": usuario["cargo"],
-                        "crm_coren": usuario["crm_coren"],
+                        "crm_coren": de(usuario.get("crm_coren", "")),
                         "admin": usuario["admin"],
                         "assinatura": usuario["assinatura"]
                     }
@@ -77,7 +87,7 @@ class AuthController:
                     # Se falhar (for uma tupla simples), acessa por índices numéricos
                     dados_sessao = {
                         "id": usuario[0],     # <--- ID ADICIONADO AQUI (Posição 0 no banco)
-                        "crm_coren": usuario[1],
+                        "crm_coren": de(usuario[1]),
                         "nome": usuario[2],
                         "email": usuario[3],
                         "cargo": usuario[4],
@@ -105,27 +115,32 @@ class AuthController:
         usuarios_db = Usuario.listar_todos()
         usuarios_lista = []
         for u in usuarios_db:
-            try:
-                # Tenta mapear como dicionário
+            if isinstance(u, dict):
+                row = u
+            elif hasattr(u, "keys"):
+                row = dict(u)
+            else:
+                row = None
+
+            if row is not None:
                 usuarios_lista.append({
-                    "id": u["id"],
-                    "nome": u["nome"],
-                    "email": u["email"],
-                    "cargo": u["cargo"],
-                    "crm_coren": u["crm_coren"],
-                    "admin": u.get("admin", "nao"),
-                    "assinatura": u.get("assinatura", "")
+                    "id": row.get("id"),
+                    "nome": row.get("nome", ""),
+                    "email": row.get("email", ""),
+                    "cargo": row.get("cargo", ""),
+                    "crm_coren": de(row.get("crm_coren", "")),
+                    "admin": row.get("admin", "nao"),
+                    "assinatura": de(row.get("assinatura", ""))
                 })
-            except (KeyError, TypeError):
-                # Fallback caso seja uma tupla
+            else:
                 usuarios_lista.append({
                     "id": u[0],
                     "nome": u[1],
                     "email": u[2],
                     "cargo": u[3],
-                    "crm_coren": u[4],
+                    "crm_coren": de(u[4]) if len(u) > 4 else "",
                     "admin": u[6] if len(u) > 6 else "nao",
-                    "assinatura": u[7] if len(u) > 7 else ""
+                    "assinatura": de(u[7]) if len(u) > 7 else ""
                 })
         return render_template("usuarios.html", usuarios=usuarios_lista)
 
@@ -138,21 +153,22 @@ class AuthController:
     def editar_usuario_post(usuario_id):
         nome = request.form.get("nome", "").strip()
         email = request.form.get("email", "").strip()
-        senha = request.form.get("senha", "").strip() # Agora capturamos a nova senha
+        senha = request.form.get("senha", "").strip()
         admin = request.form.get("admin", "nao").strip().lower()
+        crm_coren = request.form.get("crm_coren", "").strip() or None
 
         file = request.files.get("assinatura")
         assinatura_filename = None
 
         if file and file.filename != "":
             filename = f"{int(time.time())}_{secure_filename(file.filename)}"
-            upload_path = os.path.join("Static", "uploads")
+            upload_path = os.path.join("static", "uploads")
             os.makedirs(upload_path, exist_ok=True)
             file.save(os.path.join(upload_path, filename))
             assinatura_filename = filename
 
         # Passamos a "senha" para o banco de dados em vez do "cargo"
-        Usuario.atualizar(usuario_id, nome, email, senha, admin, assinatura_filename)
+        Usuario.atualizar(usuario_id, nome, email, senha, admin, assinatura_filename, crm_coren)
         return redirect(url_for("usuarios"))
     
     @staticmethod
@@ -173,14 +189,14 @@ class AuthController:
             # Lógica de salvar a imagem
             if file and file.filename != "":
                 filename = f"{int(time.time())}_{secure_filename(file.filename)}"
-                upload_path = os.path.join("Static", "uploads")
+                upload_path = os.path.join("static", "uploads")
                 os.makedirs(upload_path, exist_ok=True)
                 file.save(os.path.join(upload_path, filename))
                 assinatura_filename = filename
 
             # Chama a função que criamos no usuario.py
             from usuario import Usuario
-            Usuario.atualizar_perfil(nome, email, senha if senha else None, assinatura_filename)
+            Usuario.atualizar_perfil(session["usuario"]["id"], nome, email, senha if senha else None, assinatura_filename)
 
             # Atualiza os dados na "memória" (sessão) para a tela não mostrar dados antigos
             session["usuario"]["nome"] = nome

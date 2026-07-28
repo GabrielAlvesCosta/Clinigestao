@@ -89,6 +89,7 @@ def get_consultas():
         for r in rows:
             c = dict(r)
             c['nomePaciente'] = de(c.get('nomePaciente'))
+            c['crm_coren'] = de(c.get('crm_coren'))
             consultas_descriptografadas.append(c)
             
         return jsonify(consultas_descriptografadas)
@@ -108,7 +109,12 @@ def post_consulta():
             if not paciente:
                 return jsonify({"error": "O paciente selecionado não existe no banco de dados."}), 400
 
-            usuario = db.execute('SELECT crm_coren FROM usuarios WHERE crm_coren = ?', (crm_coren,)).fetchone()
+            usuario = None
+            rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
+            for row in rows:
+                if de(row['crm_coren']) == crm_coren:
+                    usuario = row
+                    break
             if not usuario:
                 return jsonify({"error": f"O profissional com CRM/COREN '{crm_coren}' não está cadastrado no sistema."}), 400
 
@@ -120,7 +126,7 @@ def post_consulta():
                 en(data.get('nomePaciente')), 
                 data.get('data'),
                 data.get('horario'), 
-                crm_coren, 
+                en(crm_coren), 
                 data.get('status', 'Agendado')
             ))
             db.commit()
@@ -181,6 +187,9 @@ def get_prontuarios():
             p['alergias'] = de(p.get('alergias'))
             p['hipotese'] = de(p.get('hipotese'))
             p['conduta'] = de(p.get('conduta'))
+            p['crm_coren'] = de(p.get('crm_coren'))
+            p['registroProfissional'] = de(p.get('registroProfissional'))
+            p['carimboAssinatura'] = de(p.get('carimboAssinatura'))
             prontuarios_descript.append(p)
             
         return jsonify(prontuarios_descript)
@@ -197,6 +206,8 @@ def post_prontuario():
             carimbo_enviado = data.get('carimboAssinatura')
             carimbo_sessao = usuario_sessao.get('assinatura')
             assinatura_final = carimbo_enviado if (carimbo_enviado and carimbo_enviado.strip() != '') else (carimbo_sessao or '')
+            crm_coren_encrypted = en(crm_coren_logado)
+            assinatura_final_encrypted = en(assinatura_final)
 
             cursor = db.execute('''
                 INSERT INTO prontuarios (
@@ -233,9 +244,9 @@ def post_prontuario():
                 en(data.get('neuroOutros')), 
                 en(data.get('hipotese')), 
                 en(data.get('conduta')),
-                crm_coren_logado, 
-                crm_coren_logado, 
-                assinatura_final
+                crm_coren_encrypted, 
+                crm_coren_encrypted, 
+                assinatura_final_encrypted
             ))
             
             prontuario_id = cursor.lastrowid
@@ -247,7 +258,7 @@ def post_prontuario():
             ''', (
                 data_hora_atual,
                 nome_profissional,
-                crm_coren_logado,
+                crm_coren_encrypted,
                 'Criação',
                 prontuario_id,
                 en(data.get('nomePaciente', 'N/A'))
@@ -302,6 +313,9 @@ def get_prontuario_por_id(id):
             prontuario['alergias'] = de(prontuario.get('alergias'))
             prontuario['hipotese'] = de(prontuario.get('hipotese'))
             prontuario['conduta'] = de(prontuario.get('conduta'))
+            prontuario['crm_coren'] = de(prontuario.get('crm_coren'))
+            prontuario['registroProfissional'] = de(prontuario.get('registroProfissional'))
+            prontuario['carimboAssinatura'] = de(prontuario.get('carimboAssinatura'))
             
             usuario_sessao = session.get('usuario', {})
             nome_prof = usuario_sessao.get('nome', 'Profissional')
@@ -337,6 +351,7 @@ def get_auditoria():
         for r in rows:
             l = dict(r)
             l['nome_paciente'] = de(l.get('nome_paciente'))
+            l['crm_coren'] = de(l.get('crm_coren'))
             auditoria_descript.append(l)
             
         return jsonify(auditoria_descript)
@@ -349,6 +364,7 @@ def post_auditoria():
         usuario_sessao = session.get('usuario', {})
         nome_prof = usuario_sessao.get('nome', 'Profissional')
         crm_logado = usuario_sessao.get('crm_coren', 'N/A')
+        crm_encrypted = en(crm_logado)
         
         db.execute('''
             INSERT INTO auditoria (data_hora, nome_profissional, crm_coren, acao, prontuario_id, nome_paciente)
@@ -356,7 +372,7 @@ def post_auditoria():
         ''', (
             data_hora_atual,
             nome_prof,
-            data.get('crm_coren', crm_logado),
+            en(data.get('crm_coren', crm_logado)),
             data.get('acao', 'Visualização'),
             data.get('prontuario_id'),
             en(data.get('nome_paciente', 'N/A'))
@@ -370,7 +386,13 @@ def get_usuarios():
         with get_db() as db:
             db.row_factory = sqlite3.Row
             rows = db.execute('SELECT * FROM usuarios').fetchall()
-            return jsonify([dict(r) for r in rows])
+            usuarios = []
+            for r in rows:
+                usuario = dict(r)
+                usuario['crm_coren'] = de(usuario.get('crm_coren'))
+                usuario['assinatura'] = de(usuario.get('assinatura'))
+                usuarios.append(usuario)
+            return jsonify(usuarios)
             
     except Exception as e:
         print(f"Erro ao buscar usuários: {e}")

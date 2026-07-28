@@ -12,14 +12,31 @@ with open(KEY_FILE, 'rb') as f:
 
 cipher = Fernet(FERNET_KEY)
 
+
+def _looks_encrypted(value):
+    if value is None:
+        return False
+    text = str(value).strip()
+    return bool(text) and text.startswith("gAAAAA")
+
+
 def en(value):
-    if value is None or str(value).strip() == '': return value
+    if value is None or str(value).strip() == '':
+        return value
+    if _looks_encrypted(value):
+        return str(value)
     return cipher.encrypt(str(value).encode('utf-8')).decode('utf-8')
 
+
 def de(value):
-    if value is None or str(value).strip() == '': return value
-    try: return cipher.decrypt(str(value).encode('utf-8')).decode('utf-8')
-    except: return value
+    if value is None or str(value).strip() == '':
+        return value
+    if not _looks_encrypted(value):
+        return str(value)
+    try:
+        return cipher.decrypt(str(value).encode('utf-8')).decode('utf-8')
+    except Exception:
+        return str(value)
 
 DB_FILE = 'clinica.db'
 
@@ -28,6 +45,29 @@ def get_db():
     conn.execute("PRAGMA foreign_keys = ON") 
     conn.row_factory = sqlite3.Row
     return conn
+
+def migrate_sensitive_fields():
+    with get_db() as conn:
+        cursor = conn.cursor()
+        for table, column in [
+            ("usuarios", "crm_coren"),
+            ("usuarios", "assinatura"),
+            ("consultas", "crm_coren"),
+            ("prontuarios", "crm_coren"),
+            ("auditoria", "crm_coren"),
+        ]:
+            try:
+                rows = cursor.execute(f"SELECT id, {column} FROM {table}").fetchall()
+            except sqlite3.Error:
+                continue
+
+            for row in rows:
+                value = row[1]
+                if value is None or str(value).strip() == "" or _looks_encrypted(value):
+                    continue
+                cursor.execute(f"UPDATE {table} SET {column} = ? WHERE id = ?", (en(value), row[0]))
+        conn.commit()
+
 
 def init_db():
     with get_db() as conn:
@@ -103,3 +143,4 @@ def init_db():
             )
         ''')
         conn.commit()
+        migrate_sensitive_fields()

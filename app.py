@@ -64,6 +64,14 @@ def dashboard():
         
     return render_template("dashboard.html", usuario=session["usuario"], pacientes=pacientes_descriptografados)
 
+@app.route("/adm")
+def adm():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+    if str(session["usuario"].get("admin", "nao")).lower() == "sim":
+        return redirect(url_for("usuarios"))
+    return redirect(url_for("dashboard"))
+
 @app.route("/usuarios")
 def usuarios():
     if "usuario" not in session:

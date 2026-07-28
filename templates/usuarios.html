@@ -12,9 +12,14 @@
     <div class="container" style="width: 800px; max-width: 95%;">
         <div class="header-dashboard" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid rgba(2, 77, 4, 0.15);">
             <h1 style="color: #024D04; margin: 0;">Painel de Usuários</h1>
-            <a href="{{ url_for('logout') }}" class="btn-logout" style="background: #d9534f; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
-                <i class="fa-solid fa-right-from-bracket"></i> Sair
-            </a>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <a href="{{ url_for('dashboard') }}" class="btn-logout" style="background: #0d6efd; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn-logout" style="background: #d9534f; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </a>
+            </div>
         </div>
 
         <div class="table-wrapper" style="overflow-x: auto;">
@@ -25,6 +30,7 @@
                         <th>Nome</th>
                         <th>E-mail</th>
                         <th>Cargo</th>
+                        <th>CRM/COREN</th>
                         <th>Assinatura</th>
                         <th>Admin</th>
                         <th>Ações</th>
@@ -37,6 +43,7 @@
                         <td>{{ u.nome }}</td>
                         <td>{{ u.email }}</td>
                         <td>{{ u.cargo }}</td>
+                        <td>{{ u.crm_coren or '—' }}</td>
                         <td style="text-align: center;">
                             {% if u.assinatura %}
                                 <img src="{{ url_for('static', filename='uploads/' ~ u.assinatura) }}" alt="Assinatura" style="height: 40px; border-radius: 4px; border: 1px solid #ddd;">
@@ -51,6 +58,7 @@
                                     data-nome="{{ u.nome }}" 
                                     data-email="{{ u.email }}" 
                                     data-cargo="{{ u.cargo }}" 
+                                    data-crm="{{ u.crm_coren or '' }}"
                                     data-admin="{{ u.admin }}" 
                                     onclick="abrirModal(this)" 
                                     style="background: #024D04; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
@@ -78,6 +86,9 @@
 
                 <label>Nova Senha:</label>
                 <input type="password" id="editSenha" name="senha" minlength="6" placeholder="Deixe em branco para não alterar" style="padding: 8px;">
+
+                <label>CRM/COREN:</label>
+                <input type="text" id="editCrmCoren" name="crm_coren" style="padding: 8px;">
 
                 <label>Alterar Assinatura Digital:</label>
                 <input type="file" id="editAssinatura" name="assinatura" accept="image/*" style="padding: 8px;">
@@ -107,11 +118,13 @@
         const id = botao.getAttribute("data-id");
         const nome = botao.getAttribute("data-nome");
         const email = botao.getAttribute("data-email");
+        const crm = botao.getAttribute("data-crm");
         const admin = botao.getAttribute("data-admin");
 
         // Preenche o formulário
         document.getElementById("editNome").value = nome;
         document.getElementById("editEmail").value = email;
+        document.getElementById("editCrmCoren").value = crm || "";
         
         // Garante que o campo de senha começa SEMPRE vazio
         document.getElementById("editSenha").value = "";

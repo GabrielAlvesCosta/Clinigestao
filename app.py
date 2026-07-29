@@ -1,14 +1,14 @@
 from flask import Flask, render_template, session, redirect, url_for, request
 import sqlite3
-from models import init_db, get_db, en, de
-from controllers import api
-from auth_controller import AuthController
+from models.models import init_db, get_db, en, de
+from controllers.controllers import api
+from controllers.auth_controller import AuthController
 
 app = Flask(__name__, static_folder='static') 
 app.secret_key = "chave_mestra_clinical_pep"
 
 # 1. Inicia a estrutura do banco de dados
-init_db()
+
 
 # 2. Registra o Blueprint das APIs (/api/pacientes, /api/prontuarios, etc.)
 app.register_blueprint(api, url_prefix='/api')
@@ -135,4 +135,5 @@ def cadastrar_paciente():
     return redirect(url_for("dashboard"))
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True, port=5000)

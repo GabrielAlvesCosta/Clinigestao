@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 import sqlite3
 from datetime import datetime
-from models import get_db, en, de
+from models.models import get_db, en, de
 
 api = Blueprint('api', __name__)
 
@@ -387,7 +387,15 @@ def post_auditoria():
         usuario_sessao = session.get('usuario', {})
         nome_prof = usuario_sessao.get('nome', 'Profissional')
         crm_logado = usuario_sessao.get('crm_coren', 'N/A')
-        crm_encrypted = en(crm_logado)
+
+        crm_final = data.get('crm_coren', crm_logado)
+        pront_id = data.get('prontuario_id')
+        
+        if pront_id is not None:
+            try:
+                pront_id = int(pront_id)
+            except ValueError:
+                pass
         
         db.execute('''
             INSERT INTO auditoria (data_hora, nome_profissional, crm_coren, acao, prontuario_id, nome_paciente)
@@ -395,9 +403,9 @@ def post_auditoria():
         ''', (
             data_hora_atual,
             nome_prof,
-            en(data.get('crm_coren', crm_logado)),
+            crm_final,
             data.get('acao', 'Visualização'),
-            data.get('prontuario_id'),
+            pront_id,
             en(data.get('nome_paciente', 'N/A'))
         ))
         db.commit()

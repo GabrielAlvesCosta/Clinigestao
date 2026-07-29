@@ -1,5 +1,5 @@
 import sqlite3
-from models import get_db, en, de
+from models.models import get_db, en, de
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class Usuario:

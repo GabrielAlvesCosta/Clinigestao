@@ -2,8 +2,8 @@ import os
 import time
 from werkzeug.utils import secure_filename
 from flask import render_template, request, redirect, url_for, session
-from models import de
-from usuario import Usuario
+from models.models import de
+from models.usuario import Usuario
 
 class AuthController:
 

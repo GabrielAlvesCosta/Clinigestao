@@ -1,7 +1,12 @@
 from flask import Blueprint, request, jsonify, session
 import sqlite3
 from datetime import datetime
-from models.models import get_db, en, de
+from models.models import (
+    get_db, en, de, 
+    buscar_por_documento, 
+    listar_consultas_por_documento, 
+    listar_prontuarios_por_documento
+)
 
 api = Blueprint('api', __name__)
 
@@ -10,6 +15,15 @@ api = Blueprint('api', __name__)
 # ==========================================
 @api.route('/pacientes', methods=['GET'])
 def get_pacientes():
+    documento_filtro = request.args.get('documento')
+    
+    # Se passou o documento na query string (ex: /api/pacientes?documento=123456)
+    if documento_filtro:
+        paciente = buscar_por_documento(documento_filtro)
+        if paciente:
+            return jsonify([paciente])
+        return jsonify([])
+
     with get_db() as db:
         db.row_factory = sqlite3.Row
         rows = db.execute('SELECT * FROM pacientes ORDER BY id DESC').fetchall()
@@ -30,6 +44,18 @@ def get_pacientes():
 @api.route('/pacientes', methods=['POST'])
 def post_paciente():
     data = request.get_json() or {}
+    documento = data.get('documento', '').strip()
+    
+    if not documento:
+        return jsonify({"error": "O campo documento é obrigatório."}), 400
+
+    # Validação de Unicidade: impede dois pacientes com o mesmo documento
+    if buscar_por_documento(documento):
+        return jsonify({
+            "error": "Documento já cadastrado",
+            "message": f"Já existe um paciente registrado com o documento '{documento}'."
+        }), 400
+
     with get_db() as db:
         cursor = db.execute('''
             INSERT INTO pacientes (nome, dataNasc, genero, documento, cartao, contato)
@@ -38,7 +64,7 @@ def post_paciente():
             en(data.get('nome', 'Sem Nome')),
             en(data.get('dataNasc', '')),
             en(data.get('genero', 'Não informado')),
-            en(data.get('documento', '')),
+            en(documento),
             en(data.get('cartao', '')),
             en(data.get('contato', ''))
         ))
@@ -48,6 +74,17 @@ def post_paciente():
 @api.route('/pacientes', methods=['PUT'])
 def put_paciente():
     data = request.get_json() or {}
+    paciente_id = data.get('id')
+    documento_novo = data.get('documento', '').strip()
+    
+    if not paciente_id:
+        return jsonify({"error": "ID do paciente é obrigatório."}), 400
+
+    # Verifica se o novo documento está sendo usado por outro paciente
+    paciente_existente = buscar_por_documento(documento_novo)
+    if paciente_existente and paciente_existente['id'] != int(paciente_id):
+        return jsonify({"error": "O novo documento informado já pertence a outro paciente."}), 400
+
     with get_db() as db:
         db.execute('''
             UPDATE pacientes SET
@@ -57,10 +94,10 @@ def put_paciente():
             en(data.get('nome')), 
             en(data.get('dataNasc')), 
             en(data.get('genero')),
-            en(data.get('documento')), 
+            en(documento_novo), 
             en(data.get('cartao')), 
             en(data.get('contato')),
-            data.get('id')
+            paciente_id
         ))
         db.commit()
         return jsonify({"status": "sucesso"}), 200
@@ -71,6 +108,12 @@ def put_paciente():
 @api.route('/consultas', methods=['GET'])
 def get_consultas():
     status = request.args.get('status', 'ativas')
+    documento = request.args.get('documento')
+
+    # Permite filtrar consultas diretamente pelo documento do paciente
+    if documento:
+        return jsonify(listar_consultas_por_documento(documento))
+
     with get_db() as db:
         db.row_factory = sqlite3.Row
         query = '''
@@ -89,6 +132,7 @@ def get_consultas():
         for r in rows:
             c = dict(r)
             c['nomePaciente'] = de(c.get('nomePaciente'))
+            c['documento'] = de(c.get('documento'))
             c['crm_coren'] = de(c.get('crm_coren'))
             consultas_descriptografadas.append(c)
             
@@ -98,17 +142,29 @@ def get_consultas():
 def post_consulta():
     data = request.get_json() or {}
     paciente_id = data.get('pacienteId')
+    documento = data.get('documento')
     crm_coren = data.get('crm_coren')
 
-    if not paciente_id or not crm_coren:
-        return jsonify({"error": "Paciente e Profissional (CRM/COREN) são obrigatórios."}), 400
+    if not crm_coren or (not paciente_id and not documento):
+        return jsonify({"error": "Profissional (CRM/COREN) e Paciente (ID ou Documento) são obrigatórios."}), 400
 
     try:
         with get_db() as db:
-            paciente = db.execute('SELECT id FROM pacientes WHERE id = ?', (paciente_id,)).fetchone()
-            if not paciente:
-                return jsonify({"error": "O paciente selecionado não existe no banco de dados."}), 400
+            # 1. Resolve o paciente por Documento ou ID
+            paciente = None
+            if documento:
+                paciente = buscar_por_documento(documento)
+            elif paciente_id:
+                p_row = db.execute('SELECT * FROM pacientes WHERE id = ?', (paciente_id,)).fetchone()
+                if p_row:
+                    paciente = dict(p_row)
+                    paciente['documento'] = de(paciente['documento'])
+                    paciente['nome'] = de(paciente['nome'])
 
+            if not paciente:
+                return jsonify({"error": "O paciente selecionado não foi encontrado no sistema."}), 400
+
+            # 2. Busca o CRM/COREN exato do profissional no banco
             usuario = None
             rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
             for row in rows:
@@ -119,11 +175,12 @@ def post_consulta():
                 return jsonify({"error": f"O profissional com CRM/COREN '{crm_coren}' não está cadastrado no sistema."}), 400
 
             cursor = db.execute('''
-                INSERT INTO consultas (pacienteId, nomePaciente, data, horario, crm_coren, status)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO consultas (pacienteId, documento, nomePaciente, data, horario, crm_coren, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
-                paciente_id, 
-                en(data.get('nomePaciente')), 
+                paciente['id'],
+                en(paciente['documento']),
+                en(data.get('nomePaciente', paciente.get('nome'))), 
                 data.get('data'),
                 data.get('horario'), 
                 usuario['crm_coren'], 
@@ -149,6 +206,10 @@ def put_consulta():
 # ==========================================
 @api.route('/prontuarios', methods=['GET'])
 def get_prontuarios():
+    documento = request.args.get('documento')
+    if documento:
+        return jsonify(listar_prontuarios_por_documento(documento))
+
     with get_db() as db:
         db.row_factory = sqlite3.Row
         rows = db.execute('SELECT * FROM prontuarios ORDER BY id DESC').fetchall()
@@ -156,7 +217,6 @@ def get_prontuarios():
         prontuarios_descript = []
         for r in rows:
             p = dict(r)
-            # Descriptografar todos os campos sensíveis e clínicos
             p['nomePaciente'] = de(p.get('nomePaciente'))
             p['dataNascimento'] = de(p.get('dataNascimento'))
             p['genero'] = de(p.get('genero'))
@@ -164,8 +224,6 @@ def get_prontuarios():
             p['convenioCartao'] = de(p.get('convenioCartao'))
             p['contatoPaciente'] = de(p.get('contatoPaciente'))
             p['acompanhante'] = de(p.get('acompanhante'))
-            
-            # Dados Clínicos que o usuário solicitou nas imagens
             p['especialidade'] = de(p.get('especialidade'))
             p['tipoAtendimento'] = de(p.get('tipoAtendimento'))
             p['prioridade'] = de(p.get('prioridade'))
@@ -179,8 +237,6 @@ def get_prontuarios():
             p['estadoGeral'] = de(p.get('estadoGeral'))
             p['cardioResp'] = de(p.get('cardioResp'))
             p['neuroOutros'] = de(p.get('neuroOutros'))
-            
-            # Histórico e Hipóteses
             p['qp'] = de(p.get('qp'))
             p['hda'] = de(p.get('hda'))
             p['hmp'] = de(p.get('hmp'))
@@ -203,7 +259,17 @@ def post_prontuario():
             crm_coren_logado = usuario_sessao.get('crm_coren') or data.get('crm_coren', 'S/N')
             nome_profissional = usuario_sessao.get('nome', 'Profissional')
             
-            # 1. Busca a string exata do CRM salva no banco de dados
+            # Resolve Paciente e Documento
+            documento_informado = data.get('documento')
+            paciente_id = data.get('pacienteId')
+            
+            doc_final_plain = documento_informado
+            if not doc_final_plain and paciente_id:
+                p_row = db.execute('SELECT documento FROM pacientes WHERE id = ?', (paciente_id,)).fetchone()
+                if p_row:
+                    doc_final_plain = de(p_row['documento'])
+
+            # 1. Busca o CRM/COREN no banco de dados
             db_crm_coren = None
             rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
             for row in rows:
@@ -217,23 +283,21 @@ def post_prontuario():
             carimbo_enviado = data.get('carimboAssinatura')
             carimbo_sessao = usuario_sessao.get('assinatura')
             assinatura_final = carimbo_enviado if (carimbo_enviado and carimbo_enviado.strip() != '') else (carimbo_sessao or '')
-            
-            # Criptografa apenas a assinatura. O CRM já pegamos do banco.
             assinatura_final_encrypted = en(assinatura_final)
 
             cursor = db.execute('''
                 INSERT INTO prontuarios (
-                    pacienteId, nomePaciente, dataNascimento, genero,
-                    documento, convenioCartao, contatoPaciente, acompanhante, especialidade, tipoAtendimento,
+                    pacienteId, documento, nomePaciente, dataNascimento, genero,
+                    convenioCartao, contatoPaciente, acompanhante, especialidade, tipoAtendimento,
                     prioridade, qp, hda, hmp, alergias, sinalPA, sinalFC, sinalFR, sinalTEMP, sinalSATO2, peso, altura,
                     estadoGeral, cardioResp, neuroOutros, hipotese, conduta, crm_coren, registroProfissional, carimboAssinatura
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                data.get('pacienteId'), 
+                paciente_id,
+                en(doc_final_plain),
                 en(data.get('nomePaciente')), 
                 en(data.get('dataNascimento')), 
                 en(data.get('genero')),
-                en(data.get('documento')), 
                 en(data.get('convenioCartao')), 
                 en(data.get('contatoPaciente')), 
                 en(data.get('acompanhante')), 
@@ -256,8 +320,8 @@ def post_prontuario():
                 en(data.get('neuroOutros')), 
                 en(data.get('hipotese')), 
                 en(data.get('conduta')),
-                db_crm_coren, # <-- CORREÇÃO: Usa o valor exato do banco (Tabela Prontuários)
-                db_crm_coren, # <-- CORREÇÃO: Usa o valor exato do banco (Tabela Prontuários)
+                db_crm_coren,
+                db_crm_coren,
                 assinatura_final_encrypted
             ))
             
@@ -270,7 +334,7 @@ def post_prontuario():
             ''', (
                 data_hora_atual,
                 nome_profissional,
-                db_crm_coren, # <-- CORREÇÃO: Usa o valor exato do banco (Tabela Auditoria)
+                db_crm_coren,
                 'Criação',
                 prontuario_id,
                 en(data.get('nomePaciente', 'N/A'))
@@ -293,7 +357,6 @@ def get_prontuario_por_id(id):
             if not prontuario_row:
                 return jsonify({"error": "Prontuário não encontrado"}), 404
             
-            # Descriptografar o prontuário unitário
             prontuario = dict(prontuario_row)
             prontuario['nomePaciente'] = de(prontuario.get('nomePaciente'))
             prontuario['dataNascimento'] = de(prontuario.get('dataNascimento'))
@@ -302,8 +365,6 @@ def get_prontuario_por_id(id):
             prontuario['convenioCartao'] = de(prontuario.get('convenioCartao'))
             prontuario['contatoPaciente'] = de(prontuario.get('contatoPaciente'))
             prontuario['acompanhante'] = de(prontuario.get('acompanhante'))
-            
-            # Dados Clínicos
             prontuario['especialidade'] = de(prontuario.get('especialidade'))
             prontuario['tipoAtendimento'] = de(prontuario.get('tipoAtendimento'))
             prontuario['prioridade'] = de(prontuario.get('prioridade'))
@@ -317,8 +378,6 @@ def get_prontuario_por_id(id):
             prontuario['estadoGeral'] = de(prontuario.get('estadoGeral'))
             prontuario['cardioResp'] = de(prontuario.get('cardioResp'))
             prontuario['neuroOutros'] = de(prontuario.get('neuroOutros'))
-            
-            # Histórico e Hipóteses
             prontuario['qp'] = de(prontuario.get('qp'))
             prontuario['hda'] = de(prontuario.get('hda'))
             prontuario['hmp'] = de(prontuario.get('hmp'))
@@ -329,12 +388,11 @@ def get_prontuario_por_id(id):
             prontuario['registroProfissional'] = de(prontuario.get('registroProfissional'))
             prontuario['carimboAssinatura'] = de(prontuario.get('carimboAssinatura'))
             
-            # Preparação para Auditoria
+            # Auditoria
             usuario_sessao = session.get('usuario', {})
             nome_prof = usuario_sessao.get('nome', 'Profissional')
             crm_logado_plain = usuario_sessao.get('crm_coren')
             
-            # Busca a string criptografada exata do CRM no banco de dados
             db_crm_coren = None
             if crm_logado_plain:
                 rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
@@ -351,7 +409,7 @@ def get_prontuario_por_id(id):
             ''', (
                 data_hora_atual,
                 nome_prof,
-                db_crm_coren, # <-- CORREÇÃO AQUI: Usa o valor criptografado exato do banco
+                db_crm_coren,
                 'Visualização',
                 id,
                 en(prontuario['nomePaciente'])

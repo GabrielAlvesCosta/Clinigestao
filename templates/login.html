@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <title>login</title>
+</head>
+<body>
+    <form action="" method="post">
+        <div class="content">
+            <i class="fa-solid fa-circle-user" style="color: #024d04;" id="icon"></i>
+            <h2>Bem vindo de volta</h2>
+            <p>Inicie sessão para aceder ao seu painel de controlo.</p>
+            {% if error %}
+                <p class="form-error">{{ error }}</p>
+            {% endif %}
+            <label for="email">CRM/coren</label>
+            <input type="tel" name="email" id="" placeholder="Insira seu CRM ou Coren Ex: CRM-MA 12345 ou COREN-MA 67890" >
+            <label for="senha">Senha</label>
+            <div class="password-wrapper">
+                <input type="password" name="senha" id="loginSenha" placeholder="Insira sua senha">
+                <button type="button" id="toggleLoginPassword" class="toggle-password">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <input type="submit" value="Enviar" id="btn">
+            <p class="login-link">Não tem conta? <a href="{{ url_for('cadastro') }}">Cadastre-se aqui</a></p>
+
+        </div>
+    </form>
+    <script>
+        const toggleLoginPasswordBtn = document.getElementById("toggleLoginPassword");
+        const loginSenhaInput = document.getElementById("loginSenha");
+
+        toggleLoginPasswordBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const icon = toggleLoginPasswordBtn.querySelector("i");
+            
+            if (loginSenhaInput.type === "password") {
+                loginSenhaInput.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                loginSenhaInput.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        });
+    </script>
+</body>
+</html>

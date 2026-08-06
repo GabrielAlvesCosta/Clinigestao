@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+
+    <div class="container">
+        <h1>Cadastro de Usuários</h1>
+
+        {% if error %}
+        <p class="error-message active">{{ error }}</p>
+        {% endif %}
+
+        <form id="cadastroForm" method="post" action="/cadastro" enctype="multipart/form-data">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" name="nome" value="{{ nome or '' }}" placeholder="Digite o nome" required>
+
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" value="{{ email or '' }}" placeholder="Digite o e-mail" required>
+
+            <label for="senha">Senha</label>
+            <div class="password-wrapper">
+                <input type="password" id="senha" name="senha" placeholder="Digite a senha" minlength="6" autocomplete="new-password" required>
+                <button type="button" class="toggle-password" data-target="senha" aria-label="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
+            </div>
+            <div id="senhaErro" class="error-message">A senha deve ter no mínimo 6 caracteres.</div>
+
+            <label for="confirmar_senha">Confirmar Senha</label>
+            <div class="password-wrapper">
+                <input type="password" id="confirmar_senha" name="confirmar_senha" placeholder="Confirme a senha" autocomplete="new-password" required>
+                <button type="button" class="toggle-password" data-target="confirmar_senha" aria-label="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
+            </div>
+            <div id="confirmarErro" class="error-message">As senhas não conferem.</div>
+
+            <label for="cargo">Cargo</label>
+            <input type="text" id="cargo" name="cargo" value="{{ cargo or '' }}" placeholder="Digite o cargo" maxlength="30" title="Máximo 30 caracteres" required>
+
+            <label for="crm_coren">CRM/COREM</label>
+            <input type="text" id="crm_coren" name="crm_coren" value="{{ crm_coren or '' }}" placeholder="Digite o CRM ou COREM">
+
+            <label for="assinatura">Assinatura Digital (Imagem)</label>
+            <input type="file" id="assinatura" name="assinatura" accept="image/*" required style="padding: 8px 0;">
+
+            <label>Administrador?</label>
+            <div class="opcao-admin">
+                <label>
+                    <input type="radio" name="admin" value="sim" {% if admin == 'sim' %}checked{% endif %}>
+                    Sim
+                </label>
+
+                <label>
+                    <input type="radio" name="admin" value="nao" {% if admin != 'sim' %}checked{% endif %}>
+                    Não
+                </label>
+            </div>
+
+            <div class="cadastro-link">
+                <a href="{{ url_for('login') }}">Fazer login</a>
+            </div>
+
+            <button type="submit">Cadastrar</button>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='cadastro.js') }}"></script>
+</body>
+</html>

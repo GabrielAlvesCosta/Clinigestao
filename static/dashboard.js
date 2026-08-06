@@ -1,6 +1,3 @@
-// ====================================================================
-// AUXILIARES DE SESSÃO E IDENTIFICAÇÃO DO PROFISSIONAL
-// ====================================================================
 function obterNomeProfissionalLogado() {
     return window.usuarioLogado ? window.usuarioLogado.nome : '';
 }
@@ -9,41 +6,31 @@ function obterCRMCORENProfissionalLogado() {
     return window.usuarioLogado ? window.usuarioLogado.crm_coren : '';
 }
 
-// Busca a assinatura/carimbo do perfil do profissional logado
 function obterCarimboProfissionalLogado() {
     if (!window.usuarioLogado) return '';
     return window.usuarioLogado.assinatura || window.usuarioLogado.foto || window.usuarioLogado.carimboAssinatura || '';
 }
 
-// Normaliza qualquer caminho ou nome de arquivo para a rota HTTP do Flask (/static/uploads/...)
 function obterUrlCarimboValida(carimbo) {
     if (!carimbo || carimbo === 'null' || carimbo === 'undefined' || typeof carimbo !== 'string') return '';
     
     let trimVal = carimbo.trim();
     if (!trimVal) return '';
 
-    // 1. Se já possui o caminho relativo do Flask
     if (trimVal.startsWith('/static/')) return trimVal;
 
-    // 2. Se for imagem em Base64 ou URL externa completa
     if (trimVal.startsWith('data:') || trimVal.startsWith('http://') || trimVal.startsWith('https://')) {
         return trimVal;
     }
 
-    // 3. Normaliza barras do Windows (\ para /)
     let caminhoLimpo = trimVal.replace(/\\/g, '/');
 
-    // 4. Extrai apenas o nome do arquivo final (ex: "1700000000_assinatura.png")
     let nomeArquivo = caminhoLimpo.split('/').pop();
     if (!nomeArquivo) return '';
     
-    // 5. Retorna a rota estática padrão do Flask
     return `/static/uploads/${nomeArquivo}`;
 }
 
-// ====================================================================
-// GESTÃO DE MÍDIA / PREVIEWS
-// ====================================================================
 function previewCarimbo(input) {
     const preview = document.getElementById('prontuarioCarimboPreview');
     if (preview && input.files && input.files[0]) {
@@ -68,9 +55,6 @@ function previewFoto(input) {
     }
 }
 
-// ====================================================================
-// PERFIL DO PROFISSIONAL
-// ====================================================================
 function carregarDadosPerfil() {
     const cpfLogado = localStorage.getItem('loggedInUserCPF');
     if (cpfLogado) {
@@ -128,9 +112,6 @@ async function salvarPerfil() {
     alert("Dados salvos e atualizados com sucesso!");
 }
 
-// ====================================================================
-// DROPDOWNS DINÂMICOS
-// ====================================================================
 async function atualizarDropdownPacientes() {
     const selectProntuario = document.getElementById('prontuarioPacienteSelect');
     const selectConsulta = document.getElementById('consultaPacienteSelect');
@@ -142,7 +123,7 @@ async function atualizarDropdownPacientes() {
         const pacientes = await res.json();
         
         const optionsHTML = '<option value="">Selecione um paciente cadastrado...</option>' + 
-            pacientes.map(p => `<option value="${p.id}">${p.nome || 'Sem Nome'} (Doc: ${p.documento || 'S/N'})</option>`).join('');
+            pacientes.map(p => `<option value="${p.id}" data-doc="${p.documento || ''}">${p.nome || 'Sem Nome'} (Doc: ${p.documento || 'S/N'})</option>`).join('');
 
         if (selectProntuario) selectProntuario.innerHTML = optionsHTML;
         if (selectConsulta) selectConsulta.innerHTML = optionsHTML;
@@ -173,9 +154,6 @@ async function atualizarDropdownProfissionais() {
     }
 }
 
-// ====================================================================
-// GESTÃO DE PACIENTES
-// ====================================================================
 async function cadastrarPaciente(event) {
     if (event) event.preventDefault();
 
@@ -258,7 +236,7 @@ async function renderizarTabelaPacientes() {
 
         tabela.innerHTML = '';
 
-        const filtrados = pacientes.filter(p => (p.nome || '').toLowerCase().includes(termoBusca));
+        const filtrados = pacientes.filter(p => (p.nome || '').toLowerCase().includes(termoBusca) || (p.documento || '').toLowerCase().includes(termoBusca));
 
         if (filtrados.length === 0) {
             tabela.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Nenhum paciente localizado.</td></tr>`;
@@ -351,9 +329,6 @@ async function salvarEdicaoPaciente() {
     }
 }
 
-// ====================================================================
-// GESTÃO DE CONSULTAS
-// ====================================================================
 async function agendarConsulta(event) {
     if (event) event.preventDefault();
 
@@ -375,9 +350,6 @@ async function agendarConsulta(event) {
             return alert("Erro crítico: Não é possível agendar uma consulta para uma data ou horário que já passou!");
         }
 
-        // ----------------------------------------------------------------
-        // VALIDAÇÃO: Bloqueia agendamento duplicado para o mesmo profissional
-        // ----------------------------------------------------------------
         const resConsultasAtivas = await fetch('/api/consultas?status=ativas');
         if (resConsultasAtivas.ok) {
             const consultasAtivas = await resConsultasAtivas.json();
@@ -401,10 +373,13 @@ async function agendarConsulta(event) {
         }
 
         const selectPac = document.getElementById('consultaPacienteSelect');
-        const nomePaciente = selectPac.options[selectPac.selectedIndex].text.split(' (Doc:')[0];
+        const selectedOption = selectPac.options[selectPac.selectedIndex];
+        const nomePaciente = selectedOption.text.split(' (Doc:')[0];
+        const documentoPaciente = selectedOption.dataset.doc || '';
 
         const novaConsulta = {
             pacienteId: pacienteId,
+            documento: documentoPaciente,
             nomePaciente: nomePaciente,
             data: dataInput,
             horario: horarioInput,
@@ -482,8 +457,9 @@ async function renderizarTabelaConsultas() {
 
         const filtradas = consultas.filter(c => {
             const pac = (c.nomePaciente || '').toLowerCase();
+            const doc = (c.documento || '').toLowerCase();
             const med = (c.profissional || '').toLowerCase();
-            return pac.includes(termoBusca) || med.includes(termoBusca);
+            return pac.includes(termoBusca) || doc.includes(termoBusca) || med.includes(termoBusca);
         });
 
         if (filtradas.length === 0) {
@@ -494,7 +470,10 @@ async function renderizarTabelaConsultas() {
         filtradas.forEach(c => {
             tabela.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td><strong class="text-dark">${c.nomePaciente}</strong></td>
+                    <td>
+                        <strong class="text-dark">${c.nomePaciente || 'Sem Nome'}</strong>
+                        ${c.documento ? `<br><small class="text-muted" style="font-size: 0.85em;">Doc: ${c.documento}</small>` : ''}
+                    </td>
                     <td><i class="bi bi-calendar3 text-primary"></i> ${formatarDataBR(c.data)} às <strong>${c.horario}</strong></td>
                     <td><span class="badge bg-secondary">${c.profissional} (${c.crm_coren || 'S/N'})</span></td>
                     <td><span class="badge ${obterClasseStatusConsulta(c.status)}">${c.status}</span></td>
@@ -529,8 +508,9 @@ async function renderizarTabelaConsultasConcluidas() {
 
         const filtradas = consultas.filter(c => {
             const pac = (c.nomePaciente || '').toLowerCase();
+            const doc = (c.documento || '').toLowerCase();
             const med = (c.profissional || '').toLowerCase();
-            return pac.includes(termoBusca) || med.includes(termoBusca);
+            return pac.includes(termoBusca) || doc.includes(termoBusca) || med.includes(termoBusca);
         });
 
         if (filtradas.length === 0) {
@@ -541,7 +521,10 @@ async function renderizarTabelaConsultasConcluidas() {
         filtradas.forEach(c => {
             tabela.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td><strong class="text-dark">${c.nomePaciente}</strong></td>
+                    <td>
+                        <strong class="text-dark">${c.nomePaciente || 'Sem Nome'}</strong>
+                        ${c.documento ? `<br><small class="text-muted" style="font-size: 0.85em;">Doc: ${c.documento}</small>` : ''}
+                    </td>
                     <td><i class="bi bi-calendar-check text-secondary"></i> ${formatarDataBR(c.data)} às <strong>${c.horario}</strong></td>
                     <td><span class="badge bg-secondary">${c.profissional} (${c.crm_coren || 'S/N'})</span></td>
                     <td><span class="badge ${obterClasseStatusConsulta(c.status)}">${c.status}</span></td>
@@ -579,7 +562,10 @@ async function renderizarMinhasConsultas() {
         minhasAtivas.forEach(c => {
             tabela.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td><strong class="text-dark">${c.nomePaciente}</strong></td>
+                    <td>
+                        <strong class="text-dark">${c.nomePaciente || 'Sem Nome'}</strong>
+                        ${c.documento ? `<br><small class="text-muted" style="font-size: 0.85em;">Doc: ${c.documento}</small>` : ''}
+                    </td>
                     <td><i class="bi bi-calendar3 text-primary"></i> ${formatarDataBR(c.data)}<br><strong>${c.horario}</strong></td>
                     <td><span class="badge ${obterClasseStatusConsulta(c.status)}">${c.status}</span></td>
                     <td class="text-end text-nowrap">
@@ -620,7 +606,10 @@ async function renderizarMinhasConsultasConcluidas() {
         minhasConcluidas.forEach(c => {
             tabela.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td><strong class="text-dark">${c.nomePaciente}</strong></td>
+                    <td>
+                        <strong class="text-dark">${c.nomePaciente || 'Sem Nome'}</strong>
+                        ${c.documento ? `<br><small class="text-muted" style="font-size: 0.85em;">Doc: ${c.documento}</small>` : ''}
+                    </td>
                     <td><i class="bi bi-calendar-check text-secondary"></i> ${formatarDataBR(c.data)}<br><strong>${c.horario}</strong></td>
                     <td><span class="badge ${obterClasseStatusConsulta(c.status)}">${c.status}</span></td>
                     <td class="text-end text-nowrap">
@@ -678,10 +667,6 @@ async function alterarStatusConsulta(id, novoStatus) {
     }
 }
 
-// ====================================================================
-// PRONTUÁRIOS (PEP) E AUDITORIA
-// ====================================================================
-
 async function publicarProntuario(event) {
     if (event) event.preventDefault();
 
@@ -715,7 +700,6 @@ async function publicarProntuario(event) {
 
         const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
 
-        // Captura o preview da imagem do formulário OU herda a assinatura do perfil do profissional
         const previewEl = document.getElementById('prontuarioCarimboPreview');
         let carimboImg = (previewEl && !previewEl.classList.contains('d-none')) ? previewEl.src : '';
 
@@ -813,7 +797,7 @@ async function renderizarTabelaProntuarios() {
 
         tabela.innerHTML = '';
 
-        const filtrados = prontuarios.filter(p => (p.nomePaciente || '').toLowerCase().includes(termoBusca));
+        const filtrados = prontuarios.filter(p => (p.nomePaciente || '').toLowerCase().includes(termoBusca) || (p.documento || '').toLowerCase().includes(termoBusca));
 
         if (filtrados.length === 0) {
             tabela.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">Nenhum prontuário localizado.</td></tr>`;
@@ -823,7 +807,6 @@ async function renderizarTabelaProntuarios() {
         filtrados.forEach(p => {
             let cl = p.prioridade === 'Urgente' ? 'bg-warning text-dark' : (p.prioridade === 'Emergência' ? 'bg-danger text-white' : 'bg-success text-white');
             
-            // Sanitiza e normaliza a URL do carimbo/assinatura
             const carimboBruto = p.carimboAssinatura || p.assinatura || p.foto;
             const srcValida = obterUrlCarimboValida(carimboBruto);
             
@@ -901,7 +884,6 @@ async function abrirProntuario(id) {
         setVal('editProntuarioPrioridade', prontuario.prioridade || 'Normal');
         setTxt('editProntuarioRegistro', prontuario.registroProfissional || prontuario.crm_coren);
 
-        // Tratamento do Carimbo / Assinatura Digital no Modal com validação estrita de URL
         const imgCarimbo = document.getElementById('editProntuarioCarimboView');
         const wrapper = document.getElementById('wrapperCarimboVisualizar');
         const carimboBruto = prontuario.carimboAssinatura || prontuario.assinatura || prontuario.foto;
@@ -921,7 +903,6 @@ async function abrirProntuario(id) {
             }
         }
 
-        // Atualiza a tabela de auditoria para exibir o log de 'Visualização' gravado
         await renderizarTabelaAuditoria();
 
         const modalEl = document.getElementById('modalEditarProntuario');
@@ -969,9 +950,6 @@ async function renderizarTabelaAuditoria() {
     }
 }
 
-// ====================================================================
-// FUNÇÕES AUXILIARES DE FORMATAÇÃO
-// ====================================================================
 function formatarDataBR(dataString) {
     if (!dataString) return 'N/I';
     const partes = dataString.split('-');
@@ -984,31 +962,24 @@ function limparRastrosLocais() {
     localStorage.clear();
 }
 
-// ====================================================================
-// INICIALIZAÇÃO ASSÍNCRONA E ESCUTADORES DOM
-// ====================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     carregarDadosPerfil();
     
-    // Conecta formulário de Pacientes
     const formNovoPaciente = document.getElementById('formNovoPaciente');
     if (formNovoPaciente) {
         formNovoPaciente.addEventListener('submit', cadastrarPaciente);
     }
 
-    // Conecta formulário de Prontuários
     const formNovoProntuario = document.getElementById('formNovoProntuario');
     if (formNovoProntuario) {
         formNovoProntuario.addEventListener('submit', publicarProntuario);
     }
 
-    // Conecta formulário de Consultas
     const formNovaConsulta = document.getElementById('formNovaConsulta');
     if (formNovaConsulta) {
         formNovaConsulta.addEventListener('submit', agendarConsulta);
     }
 
-    // Carregamento Inicial das Listas
     await atualizarDropdownPacientes();
     await atualizarDropdownProfissionais();
     
@@ -1022,7 +993,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await renderizarMinhasConsultasConcluidas();
     await atualizarPainelAtendimentos();
 
-    // DEFINIÇÃO DE DATAS LIMITES PARA OS INPUTS
     const hoje = new Date();
     const ano = hoje.getFullYear();
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
@@ -1044,13 +1014,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputEditDataNasc.max = dataAtualFormatada;
     }
 
-    // Filtros e buscas em tempo real
     document.getElementById('buscaPaciente')?.addEventListener('input', renderizarTabelaProntuarios);
     document.getElementById('buscaPacienteLista')?.addEventListener('input', renderizarTabelaPacientes);
     document.getElementById('buscaConsulta')?.addEventListener('input', renderizarTabelaConsultas);
     document.getElementById('buscaConsultaConcluida')?.addEventListener('input', renderizarTabelaConsultasConcluidas);
 
-    // Atualização de tabelas ao alternar abas Bootstrap
     document.getElementById('tab-historico-prontuarios')?.addEventListener('shown.bs.tab', renderizarTabelaProntuarios);
     document.getElementById('tab-pacientes-cadastrados')?.addEventListener('shown.bs.tab', renderizarTabelaPacientes);
     document.getElementById('tab-consultas-agendadas')?.addEventListener('shown.bs.tab', renderizarTabelaConsultas);

@@ -10,14 +10,10 @@ from models.models import (
 
 api = Blueprint('api', __name__)
 
-# ==========================================
-# ROTAS DE PACIENTES
-# ==========================================
 @api.route('/pacientes', methods=['GET'])
 def get_pacientes():
     documento_filtro = request.args.get('documento')
     
-    # Se passou o documento na query string (ex: /api/pacientes?documento=123456)
     if documento_filtro:
         paciente = buscar_por_documento(documento_filtro)
         if paciente:
@@ -49,7 +45,6 @@ def post_paciente():
     if not documento:
         return jsonify({"error": "O campo documento é obrigatório."}), 400
 
-    # Validação de Unicidade: impede dois pacientes com o mesmo documento
     if buscar_por_documento(documento):
         return jsonify({
             "error": "Documento já cadastrado",
@@ -80,7 +75,6 @@ def put_paciente():
     if not paciente_id:
         return jsonify({"error": "ID do paciente é obrigatório."}), 400
 
-    # Verifica se o novo documento está sendo usado por outro paciente
     paciente_existente = buscar_por_documento(documento_novo)
     if paciente_existente and paciente_existente['id'] != int(paciente_id):
         return jsonify({"error": "O novo documento informado já pertence a outro paciente."}), 400
@@ -102,15 +96,11 @@ def put_paciente():
         db.commit()
         return jsonify({"status": "sucesso"}), 200
 
-# ==========================================
-# ROTAS DE CONSULTAS
-# ==========================================
 @api.route('/consultas', methods=['GET'])
 def get_consultas():
     status = request.args.get('status', 'ativas')
     documento = request.args.get('documento')
 
-    # Permite filtrar consultas diretamente pelo documento do paciente
     if documento:
         return jsonify(listar_consultas_por_documento(documento))
 
@@ -150,7 +140,6 @@ def post_consulta():
 
     try:
         with get_db() as db:
-            # 1. Resolve o paciente por Documento ou ID
             paciente = None
             if documento:
                 paciente = buscar_por_documento(documento)
@@ -164,7 +153,6 @@ def post_consulta():
             if not paciente:
                 return jsonify({"error": "O paciente selecionado não foi encontrado no sistema."}), 400
 
-            # 2. Busca o CRM/COREN exato do profissional no banco
             usuario = None
             rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
             for row in rows:
@@ -201,9 +189,6 @@ def put_consulta():
         db.commit()
         return jsonify({"status": "sucesso"}), 200
 
-# ==========================================
-# ROTAS DE PRONTUÁRIOS E AUDITORIA
-# ==========================================
 @api.route('/prontuarios', methods=['GET'])
 def get_prontuarios():
     documento = request.args.get('documento')
@@ -259,7 +244,6 @@ def post_prontuario():
             crm_coren_logado = usuario_sessao.get('crm_coren') or data.get('crm_coren', 'S/N')
             nome_profissional = usuario_sessao.get('nome', 'Profissional')
             
-            # Resolve Paciente e Documento
             documento_informado = data.get('documento')
             paciente_id = data.get('pacienteId')
             
@@ -269,7 +253,6 @@ def post_prontuario():
                 if p_row:
                     doc_final_plain = de(p_row['documento'])
 
-            # 1. Busca o CRM/COREN no banco de dados
             db_crm_coren = None
             rows = db.execute('SELECT crm_coren FROM usuarios').fetchall()
             for row in rows:
@@ -388,7 +371,6 @@ def get_prontuario_por_id(id):
             prontuario['registroProfissional'] = de(prontuario.get('registroProfissional'))
             prontuario['carimboAssinatura'] = de(prontuario.get('carimboAssinatura'))
             
-            # Auditoria
             usuario_sessao = session.get('usuario', {})
             nome_prof = usuario_sessao.get('nome', 'Profissional')
             crm_logado_plain = usuario_sessao.get('crm_coren')

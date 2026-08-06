@@ -82,7 +82,6 @@ def init_db():
     with get_db() as conn:
         c = conn.cursor()
         
-        # 1. TABELA DE USUÁRIOS
         c.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,7 +118,6 @@ def init_db():
                 crm_coren TEXT,
                 status TEXT,
                 FOREIGN KEY (pacienteId) REFERENCES pacientes(id),
-                FOREIGN KEY (documento) REFERENCES pacientes(documento),
                 FOREIGN KEY (crm_coren) REFERENCES usuarios(crm_coren) 
             )
         ''')
@@ -158,7 +156,6 @@ def init_db():
                 conduta TEXT,
                 crm_coren TEXT,
                 FOREIGN KEY (pacienteId) REFERENCES pacientes(id),
-                FOREIGN KEY (documento) REFERENCES pacientes(documento),
                 FOREIGN KEY (crm_coren) REFERENCES usuarios(crm_coren)
             )
         ''')

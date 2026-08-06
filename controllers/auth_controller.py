@@ -62,7 +62,7 @@ class AuthController:
             return redirect(url_for("dashboard"))
 
         if request.method == "POST":
-            email = request.form.get("email", "").strip()
+            email = request.form.get("crm_coren", "").strip()
             senha = request.form.get("senha", "").strip()
 
             if not email or not senha:
@@ -103,7 +103,7 @@ class AuthController:
                     return redirect(url_for("usuarios"))
                 return redirect(url_for("dashboard"))
             else:
-                return render_template("login.html", error="Email ou senha incorretos")
+                return render_template("login.html", error="CRM/COREN ou Senha incorretos")
 
         return render_template("login.html")
 

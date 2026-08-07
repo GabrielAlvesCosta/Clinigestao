@@ -330,6 +330,12 @@ def post_prontuario():
         print(f"Erro Crítico ao salvar prontuário: {str(e)}")
         return jsonify({"error": f"Erro interno no servidor: {str(e)}"}), 500
 
+def fazer_prontuario():
+    usuario_admin = session.get('admin', '').lower()
+
+    if usuario_admin == 'atendente':
+        return jsonify({'error': 'Acesso negado: Atendentes não têm permissão para criar prontuários.'}), 403
+
 @api.route('/prontuarios/<int:id>', methods=['GET'])
 def get_prontuario_por_id(id):
     try:

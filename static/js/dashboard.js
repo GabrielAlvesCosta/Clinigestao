@@ -861,6 +861,7 @@ async function abrirProntuario(id) {
         setTxt('editProntuarioNasc', formatarDataBR(prontuario.dataNascimento));
         setTxt('editProntuarioGenero', prontuario.genero);
         setTxt('editProntuarioCartao', prontuario.convenioCartao);
+        setTxt('editProntuarioDocumento', prontuario.documento);
         setTxt('editProntuarioContato', prontuario.contatoPaciente);
 
         setVal('editProntuarioQP', prontuario.qp);

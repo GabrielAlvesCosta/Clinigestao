@@ -6,7 +6,7 @@
     <title>Painel Clínico - Sistema PEP & Gestão Integrada</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <script>
         window.usuarioLogado = {
             id: "{{ usuario.id if usuario and usuario.id else '' }}",
@@ -84,11 +84,13 @@
                             <i class="bi bi-calendar-x"></i> Consultas Concluídas
                         </button>
                     </li>
+                    {% if usuario and (usuario.admin|string|lower) != 'atendente' %}
                     <li class="nav-item">
                         <button class="nav-link fs-4" id="tab-novo-prontuario" data-bs-toggle="tab" data-bs-target="#pane-novo-prontuario" type="button" role="tab">
                             <i class="bi bi-file-earmark-medical"></i> Novo Prontuário (PEP)
                         </button>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <button class="nav-link fs-4" id="tab-historico-prontuarios" data-bs-toggle="tab" data-bs-target="#pane-historico-prontuarios" type="button" role="tab">
                             <i class="bi bi-folder2-open"></i> Histórico de Prontuários
@@ -268,7 +270,7 @@
                     <div class="tab-pane fade" id="pane-pacientes-lista" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="text-primary mb-0"><i class="bi bi-people-fill"></i> Pacientes Cadastrados</h4>
-                            <div class="w-25"><input type="text" id="buscaPacienteLista" class="form-control" placeholder="Buscar por nome..."></div>
+                            <div class="w-25"><input type="text" id="buscaPacienteLista" class="form-control" placeholder="Buscar por nome ou documento (CPF/RG)..."></div>
                         </div>
                         <div class="table-responsive table-scroll-container">
                             <table class="table table-hover align-middle">
@@ -283,13 +285,11 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaPacientes">
-                                    <!-- Preenchido via JavaScript (dashboard.js) -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- ABA: AGENDAR CONSULTA -->
                     <div class="tab-pane fade" id="pane-nova-consulta" role="tabpanel">
                         <h4 class="mb-3 text-primary"><i class="bi bi-calendar-plus-fill"></i> Agendar Nova Consulta</h4>
                         <form id="formNovaConsulta" onsubmit="agendarConsulta(event)">
@@ -321,7 +321,6 @@
                         </form>
                     </div>
 
-                    <!-- ABA: CONSULTAS AGENDADAS -->
                     <div class="tab-pane fade" id="pane-consultas-lista" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="text-primary mb-0"><i class="bi bi-calendar-week"></i> Mural de Consultas Compartilhado (Ativas)</h4>
@@ -343,7 +342,6 @@
                         </div>
                     </div>
 
-                    <!-- ABA: CONSULTAS CONCLUÍDAS -->
                     <div class="tab-pane fade" id="pane-consultas-concluidas" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="text-success mb-0"><i class="bi bi-calendar-check-fill"></i> Histórico de Consultas Finalizadas</h4>
@@ -365,7 +363,6 @@
                         </div>
                     </div>
 
-                    <!-- ABA: NOVO PRONTUÁRIO -->
                     <div class="tab-pane fade" id="pane-novo-prontuario" role="tabpanel">
                         <h4 class="mb-3 text-primary"><i class="bi bi-file-earmark-medical-fill"></i> Abertura de Prontuário de Atendimento</h4>
                         <form id="formNovoProntuario" onsubmit="publicarProntuario(event)">
@@ -475,7 +472,7 @@
                                     <h5 class="text-secondary mb-2">Assinatura e Autenticação</h5>
                                     <div class="alert alert-info py-2 mb-0 d-flex align-items-center gap-2">
                                         <i class="bi bi-info-circle-fill fs-5"></i> 
-                                        <span>Seus dados de identificação (Identificador e Foto do Perfil) serão anexados automaticamente a este prontuário no momento da submissão para integridade dos dados e proteção LGPD.</span>
+                                        <span>Seus dados de identificação serão anexados automaticamente a este prontuário no momento da submissão para integridade dos dados e proteção LGPD.</span>
                                     </div>
                                 </div>
 
@@ -486,11 +483,10 @@
                         </form>
                     </div>
 
-                    <!-- ABA: HISTÓRICO DE PRONTUÁRIOS -->
                     <div class="tab-pane fade" id="pane-historico-prontuarios" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="text-primary mb-0"><i class="bi bi-archive-fill"></i> Repositório de Prontuários Eletrônicos (PEP)</h4>
-                            <div class="w-25"><input type="text" id="buscaPaciente" class="form-control" placeholder="Filtrar por nome do paciente..."></div>
+                            <div class="w-25"><input type="text" id="buscaPaciente" class="form-control" placeholder="Filtrar por nome do paciente ou documento (CPF/RG)..."></div>
                         </div>
                         <div class="table-responsive table-scroll-container">
                             <table class="table table-hover align-middle">
@@ -535,7 +531,6 @@
         </div>
     </div>
 
-    <!-- MODAIS -->
     <div class="modal fade" id="modalEditarPaciente" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -598,6 +593,7 @@
                             <div class="col-md-3"><strong>Nascimento:</strong> <span id="editProntuarioNasc"></span></div>
                             <div class="col-md-2"><strong>Gênero:</strong> <span id="editProntuarioGenero"></span></div>
                             <div class="col-md-3"><strong>Nº Carteira:</strong> <span id="editProntuarioCartao"></span></div>
+                            <div class="col-md-4 mt-2"><strong>Documento (CPF/RG):</strong> <span id="editProntuarioDocumento"></span></div>
                             <div class="col-md-4 mt-2"><strong>Contato:</strong> <span id="editProntuarioContato" class="text-primary fw-bold"></span></div>
                         </div>
                     </div>
@@ -668,14 +664,11 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Coloque isso ANTES do script dashboard.js -->
+
 <script>
-    // 1. O Flask "imprime" os dados do usuário logado direto no JavaScript
     window.usuarioLogado = {{ usuario | tojson | safe }};
     
-    // 2. Mantém a compatibilidade com as funções antigas do seu JS que usam LocalStorage
     if (window.usuarioLogado && window.usuarioLogado.cpf) {
         localStorage.setItem('loggedInUserCPF', window.usuarioLogado.cpf);
         localStorage.setItem(window.usuarioLogado.cpf, JSON.stringify(window.usuarioLogado));
@@ -683,9 +676,8 @@
 </script>
 
 <script>
-    // Converte a sessão Python para um objeto JSON acessível via JavaScript
     window.usuarioLogado = {{ usuario | tojson | safe if usuario else '{}' }};
 </script>
-<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

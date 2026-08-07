@@ -8,19 +8,15 @@ function abrirModal(botao) {
     const nome = botao.getAttribute("data-nome");
     const email = botao.getAttribute("data-email");
     const cargo = botao.getAttribute("data-cargo");
-    const admin = botao.getAttribute("data-admin");
+    const role = botao.getAttribute("data-role");
 
     // 2. Preenche os campos de texto no Modal
     document.getElementById("editNome").value = nome;
     document.getElementById("editEmail").value = email;
     document.getElementById("editCargo").value = cargo;
     
-    // 3. Marca a opção correta de Administrador
-    if (admin === "sim") {
-        document.querySelector("input[name='admin'][value='sim']").checked = true;
-    } else {
-        document.querySelector("input[name='admin'][value='nao']").checked = true;
-    }
+    // 3. Marca o perfil correto no select
+    document.getElementById("editPerfil").value = role || "comum";
 
     // 4. Diz ao formulário para onde deve enviar os dados (Rota do Flask)
     formEditar.action = "/usuarios/editar/" + id;

@@ -3,6 +3,7 @@ import sqlite3
 from models.models import init_db, get_db, en, de
 from controllers.controllers import api
 from controllers.auth_controller import AuthController
+from models.usuario import Usuario
 
 app = Flask(__name__, static_folder='static') 
 app.secret_key = "chave_mestra_clinical_pep"
@@ -68,7 +69,7 @@ def dashboard():
 def adm():
     if "usuario" not in session:
         return redirect(url_for("login"))
-    if str(session["usuario"].get("admin", "nao")).lower() == "sim":
+    if Usuario.normalizar_perfil(session["usuario"].get("admin", "nao")) == "admin":
         return redirect(url_for("usuarios"))
     return redirect(url_for("dashboard"))
 
@@ -77,7 +78,7 @@ def usuarios():
     if "usuario" not in session:
         return redirect(url_for("login"))
     
-    if str(session["usuario"].get("admin", "nao")).lower() != "sim":
+    if Usuario.normalizar_perfil(session["usuario"].get("admin", "nao")) != "admin":
         return redirect(url_for("dashboard"))
         
     return AuthController.usuarios()

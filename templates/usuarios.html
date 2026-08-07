@@ -32,7 +32,7 @@
                         <th>Cargo</th>
                         <th>CRM/COREN</th>
                         <th>Assinatura</th>
-                        <th>Admin</th>
+                        <th>Perfil</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -51,7 +51,12 @@
                                 <small style="color:#999;">Sem Imagem</small>
                             {% endif %}
                         </td>
-                        <td>{{ 'Sim' if u.admin == 'sim' else 'Não' }}</td>
+                        <td>
+                            {% set perfil = (u.admin|string|lower) %}
+                            {% if perfil == 'admin' %}Admin
+                            {% elif perfil == 'atendente' %}Atendente
+                            {% else %}Comum{% endif %}
+                        </td>
                         <td>
                             <button class="btn-editar" 
                                     data-id="{{ u.id }}" 
@@ -59,7 +64,7 @@
                                     data-email="{{ u.email }}" 
                                     data-cargo="{{ u.cargo }}" 
                                     data-crm="{{ u.crm_coren or '' }}"
-                                    data-admin="{{ u.admin }}" 
+                                    data-role="{{ u.admin }}" 
                                     onclick="abrirModal(this)" 
                                     style="background: #024D04; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
                                 Editar
@@ -94,15 +99,12 @@
                 <input type="file" id="editAssinatura" name="assinatura" accept="image/*" style="padding: 8px;">
                 <small style="color: #666;">(Deixe em branco se não quiser alterar a imagem atual)</small>
                 
-                <label>Administrador?</label>
-                <div style="display: flex; gap: 20px; align-items: center; margin-top: 5px;">
-                    <label style="display: flex; align-items: center; gap: 5px; margin: 0;">
-                        <input type="radio" name="admin" value="sim" style="margin: 0;"> Sim
-                    </label>
-                        <label style="display: flex; align-items: center; gap: 5px; margin: 0;">
-                        <input type="radio" name="admin" value="nao" style="margin: 0;"> Não
-                    </label>
-                </div>
+                <label>Perfil:</label>
+                <select id="editPerfil" name="admin" style="padding: 8px;">
+                    <option value="admin">Admin</option>
+                    <option value="comum">Comum (Usuário)</option>
+                    <option value="atendente">Atendente</option>
+                </select>
 
                 <button type="submit" style="margin-top: 15px; padding: 10px; background: #024D04; color: white; border: none; border-radius: 5px; cursor: pointer;">Salvar Alterações</button>
             </form>
@@ -119,7 +121,7 @@
         const nome = botao.getAttribute("data-nome");
         const email = botao.getAttribute("data-email");
         const crm = botao.getAttribute("data-crm");
-        const admin = botao.getAttribute("data-admin");
+        const role = botao.getAttribute("data-role");
 
         // Preenche o formulário
         document.getElementById("editNome").value = nome;
@@ -129,12 +131,8 @@
         // Garante que o campo de senha começa SEMPRE vazio
         document.getElementById("editSenha").value = "";
         
-        // Marca a opção correta de Administrador
-        if (admin === "sim") {
-            document.querySelector("input[name='admin'][value='sim']").checked = true;
-        } else {
-            document.querySelector("input[name='admin'][value='nao']").checked = true;
-        }
+        // Marca o perfil correto no select
+        document.getElementById("editPerfil").value = role || "comum";
 
         // Aponta para a rota correta do Python
         formEditar.action = "/usuarios/editar/" + id;

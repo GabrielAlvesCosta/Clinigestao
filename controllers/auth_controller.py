@@ -15,13 +15,10 @@ class AuthController:
             cargo = request.form.get("cargo", "").strip()
             crm_coren = (request.form.get("crm_coren") or request.form.get("crm_corem") or "").strip()
             senha = request.form.get("senha", "").strip()
-            admin = request.form.get("admin", "nao").strip().lower()
+            admin = Usuario.normalizar_perfil(request.form.get("admin", "nao"))
 
             if not nome or not email or not cargo or not senha:
                 return render_template("cadastro.html", error="Preencha os campos obrigatórios")
-
-            if admin not in ("sim", "nao"):
-                admin = "nao"
 
             if Usuario.email_existe(email):
                 return render_template("cadastro.html", error="Email já cadastrado")
@@ -56,8 +53,8 @@ class AuthController:
     def login():
         if "usuario" in session:
             usuario = session["usuario"]
-            admin_value = str(usuario.get("admin", "nao")).strip().lower()
-            if admin_value == "sim":
+            admin_value = Usuario.normalizar_perfil(usuario.get("admin", "nao"))
+            if admin_value == "admin":
                 return redirect(url_for("usuarios"))
             return redirect(url_for("dashboard"))
 
@@ -79,10 +76,10 @@ class AuthController:
                         "email": usuario["email"],
                         "cargo": usuario["cargo"],
                         "crm_coren": de(usuario.get("crm_coren", "")),
-                        "admin": usuario["admin"],
+                        "admin": Usuario.normalizar_perfil(usuario.get("admin", "nao")),
                         "assinatura": usuario["assinatura"]
                     }
-                    admin_value = str(usuario["admin"] or "nao").strip().lower()
+                    admin_value = Usuario.normalizar_perfil(usuario.get("admin", "nao"))
                 except (KeyError, TypeError):
                     # Se falhar (for uma tupla simples), acessa por índices numéricos
                     dados_sessao = {
@@ -91,15 +88,15 @@ class AuthController:
                         "nome": usuario[2],
                         "email": usuario[3],
                         "cargo": usuario[4],
-                        "admin": usuario[6],
+                        "admin": Usuario.normalizar_perfil(usuario[6]),
                         "assinatura": usuario[7]
                     }
-                    admin_value = str(usuario[6] or "nao").strip().lower()
+                    admin_value = Usuario.normalizar_perfil(usuario[6])
 
                 # Salva os dados tratados na sessão
                 session["usuario"] = dados_sessao
 
-                if admin_value == "sim":
+                if admin_value == "admin":
                     return redirect(url_for("usuarios"))
                 return redirect(url_for("dashboard"))
             else:
@@ -129,7 +126,7 @@ class AuthController:
                     "email": row.get("email", ""),
                     "cargo": row.get("cargo", ""),
                     "crm_coren": de(row.get("crm_coren", "")),
-                    "admin": row.get("admin", "nao"),
+                    "admin": Usuario.normalizar_perfil(row.get("admin", "nao")),
                     "assinatura": de(row.get("assinatura", ""))
                 })
             else:
@@ -139,7 +136,7 @@ class AuthController:
                     "email": u[2],
                     "cargo": u[3],
                     "crm_coren": de(u[4]) if len(u) > 4 else "",
-                    "admin": u[6] if len(u) > 6 else "nao",
+                    "admin": Usuario.normalizar_perfil(u[6] if len(u) > 6 else "nao"),
                     "assinatura": de(u[7]) if len(u) > 7 else ""
                 })
         return render_template("usuarios.html", usuarios=usuarios_lista)
@@ -154,7 +151,7 @@ class AuthController:
         nome = request.form.get("nome", "").strip()
         email = request.form.get("email", "").strip()
         senha = request.form.get("senha", "").strip()
-        admin = request.form.get("admin", "nao").strip().lower()
+        admin = Usuario.normalizar_perfil(request.form.get("admin", "nao"))
         crm_coren = request.form.get("crm_coren", "").strip() or None
 
         file = request.files.get("assinatura")

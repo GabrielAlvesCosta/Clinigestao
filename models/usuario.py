@@ -12,8 +12,23 @@ class Usuario:
         self.admin = admin
         self.assinatura = assinatura
 
+    @staticmethod
+    def normalizar_perfil(valor):
+        if valor is None:
+            return "comum"
+
+        valor_texto = str(valor).strip().lower()
+        if valor_texto in ("sim", "admin", "adm", "administrador"):
+            return "admin"
+        if valor_texto in ("atendente", "atendente"):
+            return "atendente"
+        if valor_texto in ("nao", "não", "comum", "usuario", "usuario comum", "user", "comum(usuario)"):
+            return "comum"
+        return "comum"
+
     def salvar(self):
         hashed_senha = generate_password_hash(self.senha)
+        perfil = self.normalizar_perfil(self.admin)
         with get_db() as conexao:
             crm_value = str(self.crm_coren or "").strip()
             if crm_value:
@@ -30,7 +45,7 @@ class Usuario:
                     INSERT INTO usuarios (nome, email, cargo, crm_coren, senha, admin, assinatura)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (self.nome, self.email, self.cargo, en(self.crm_coren), hashed_senha, self.admin, en(self.assinatura))
+                    (self.nome, self.email, self.cargo, en(self.crm_coren), hashed_senha, perfil, en(self.assinatura))
                 )
                 conexao.commit()
             except sqlite3.IntegrityError as exc:
@@ -64,8 +79,9 @@ class Usuario:
             conexao.commit()
     @staticmethod
     def atualizar(usuario_id, nome, email, senha, admin, assinatura_filename=None, crm_coren=None):
+        perfil = Usuario.normalizar_perfil(admin)
         query = "UPDATE usuarios SET nome = ?, email = ?, admin = ?"
-        params = [nome, email, admin]
+        params = [nome, email, perfil]
 
         if crm_coren is not None:
             with get_db() as conexao:
@@ -120,5 +136,6 @@ class Usuario:
                     if check_password_hash(usuario['senha'], senha):
                         usuario['crm_coren'] = de(usuario.get('crm_coren'))
                         usuario['assinatura'] = de(usuario.get('assinatura'))
+                        usuario['admin'] = Usuario.normalizar_perfil(usuario.get('admin'))
                         return usuario
             return None

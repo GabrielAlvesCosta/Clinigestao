@@ -9,6 +9,11 @@ class AuthController:
 
     @staticmethod
     def cadastro():
+        chave_param = request.args.get('chave')
+    
+        if chave_param != "MED2026":
+            return "Acesso Negado: Chave de acesso inválida ou ausente.", 403
+        
         if request.method == "POST":
             nome = request.form.get("nome", "").strip()
             email = request.form.get("email", "").strip()

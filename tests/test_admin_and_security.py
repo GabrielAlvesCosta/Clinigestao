@@ -1,6 +1,7 @@
 import gc
 import json
 import sqlite3
+from io import BytesIO
 import pytest
 from unittest.mock import patch, MagicMock
 from werkzeug.security import check_password_hash
@@ -257,6 +258,29 @@ def test_22_sec_rota_edicao_usuario_bloqueada_sem_sessao(client):
     res = client.post('/usuarios/editar/1', data={"nome": "Mudou"})
     assert res.status_code == 302
     assert "/login" in res.headers['Location']
+
+
+def test_23_cadastro_aceita_perfil_comum(client):
+    arquivo = (BytesIO(b"fake-image"), "assinatura.png")
+
+    response = client.post('/cadastro', data={
+        "nome": "Usuário Comum",
+        "email": "comum@test.com",
+        "cargo": "Recepcionista",
+        "crm_coren": "",
+        "senha": "senha123",
+        "confirmar_senha": "senha123",
+        "admin": "comum",
+        "assinatura": arquivo,
+    }, content_type='multipart/form-data')
+
+    assert response.status_code == 302
+    assert response.headers['Location'] == '/login'
+
+    with meu_app.app.app_context():
+        usuario = Usuario.buscar_por_email('comum@test.com')
+        assert usuario is not None
+        assert usuario['admin'] == 'comum'
 
 def test_23_sec_tentativa_sql_injection_login_falha(client):
     payload_sqli = "admin@teste.com' OR '1'='1"

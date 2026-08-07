@@ -46,18 +46,12 @@
             <label for="assinatura">Assinatura Digital (Imagem)</label>
             <input type="file" id="assinatura" name="assinatura" accept="image/*" required style="padding: 8px 0;">
 
-            <label>Administrador?</label>
-            <div class="opcao-admin">
-                <label>
-                    <input type="radio" name="admin" value="sim" {% if admin == 'sim' %}checked{% endif %}>
-                    Sim
-                </label>
-
-                <label>
-                    <input type="radio" name="admin" value="nao" {% if admin != 'sim' %}checked{% endif %}>
-                    Não
-                </label>
-            </div>
+            <label for="perfil">Perfil</label>
+            <select id="perfil" name="admin">
+                <option value="comum" {% if admin in ('comum', 'nao', '') %}selected{% endif %}>Comum (Usuário)</option>
+                <option value="admin" {% if admin == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="atendente" {% if admin == 'atendente' %}selected{% endif %}>Atendente</option>
+            </select>
 
             <div class="cadastro-link">
                 <a href="{{ url_for('login') }}">Fazer login</a>

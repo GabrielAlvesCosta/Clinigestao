@@ -114,7 +114,8 @@ button.toggle-password::-moz-focus-inner {
     border: 0;
 }
 
-input {
+input,
+select {
     width: 100%;
     padding: 14px 12px;
     border: 1px solid rgba(2, 77, 4, 0.4);
@@ -122,12 +123,26 @@ input {
     font-size: 15px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
     background: #f8faf8;
+    color: #1f3d1f;
 }
 
-input:focus {
+input:focus,
+select:focus {
     outline: none;
     border-color: #024D04;
     box-shadow: 0 0 14px rgba(2, 77, 4, 0.18);
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #024D04 50%), linear-gradient(135deg, #024D04 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(1.2em), calc(100% - 14px) calc(1.2em);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 42px;
+    cursor: pointer;
 }
 
 input.invalid {

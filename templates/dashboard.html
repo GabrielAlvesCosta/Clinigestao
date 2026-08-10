@@ -145,7 +145,7 @@
                         </form>
 
                         <hr class="my-5">
-                        
+                        {% if usuario and (usuario.admin|string|lower) != 'atendente' %}
                         <div class="row mt-4">
                             <div class="col-12">
                                 <h5 class="text-secondary border-bottom pb-2"><i class="bi bi-speedometer2"></i> Meu Painel de Atendimentos</h5>
@@ -177,8 +177,10 @@
                                 </div>
                             </div>
                         </div>
-
+                        {% endif %}
+                        
                         <div class="row g-4 mt-3">
+                            {% if usuario and (usuario.admin|string|lower) != 'atendente' %}
                             <div class="col-lg-6">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="text-primary mb-0"><i class="bi bi-calendar2-check"></i> Minhas Consultas Agendadas</h5>
@@ -216,6 +218,7 @@
                                     </table>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
 

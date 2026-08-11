@@ -10,13 +10,26 @@
 <body>
 
     <div class="container">
+        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom: 20px;">
+            <a href="{{ url_for('usuarios') }}" style="background: #0d6efd; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
+                <i class="fa-solid fa-users"></i> Usuários
+            </a>
+            <a href="{{ url_for('dashboard') }}" style="background: #0d6efd; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
+                <i class="fa-solid fa-gauge-high"></i> Dashboard
+            </a>
+        </div>
+
         <h1>Cadastro de Usuários</h1>
 
         {% if error %}
-        <p class="error-message active">{{ error }}</p>
+        <div class="message error-message active" role="alert">{{ error }}</div>
         {% endif %}
 
-        <form id="cadastroForm" method="post" action="/cadastro" enctype="multipart/form-data">
+        {% if success %}
+        <div class="message success-message active" role="status">{{ success }}</div>
+        {% endif %}
+
+        <form id="cadastroForm" method="post" action="{{ url_for('cadastro', chave='MED2026') }}" enctype="multipart/form-data">
             <label for="nome">Nome</label>
             <input type="text" id="nome" name="nome" value="{{ nome or '' }}" placeholder="Digite o nome" required>
 
@@ -28,14 +41,17 @@
                 <input type="password" id="senha" name="senha" placeholder="Digite a senha" minlength="6" autocomplete="new-password" required>
                 <button type="button" class="toggle-password" data-target="senha" aria-label="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
             </div>
-            <div id="senhaErro" class="error-message">A senha deve ter no mínimo 6 caracteres.</div>
+            <div class="password-hint" style="font-size: 12px; color: #5a5a5a; margin-top: 6px; margin-bottom: 6px;">
+                A senha precisa ter: 1 letra maiúscula, 1 letra minúscula e 1 caractere especial.
+            </div>
+            <div id="senhaErro" class="error-message password-rule" style="display: none; margin-top: 6px; padding: 8px 10px; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-weight: 600;">A senha deve ter no mínimo 6 caracteres.</div>
 
             <label for="confirmar_senha">Confirmar Senha</label>
             <div class="password-wrapper">
                 <input type="password" id="confirmar_senha" name="confirmar_senha" placeholder="Confirme a senha" autocomplete="new-password" required>
                 <button type="button" class="toggle-password" data-target="confirmar_senha" aria-label="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
             </div>
-            <div id="confirmarErro" class="error-message">As senhas não conferem.</div>
+            <div id="confirmarErro" class="error-message password-rule" style="display: none; margin-top: 6px; padding: 8px 10px; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-weight: 600;">As senhas não conferem.</div>
 
             <label for="cargo">Cargo</label>
             <input type="text" id="cargo" name="cargo" value="{{ cargo or '' }}" placeholder="Digite o cargo" maxlength="30" title="Máximo 30 caracteres" required>

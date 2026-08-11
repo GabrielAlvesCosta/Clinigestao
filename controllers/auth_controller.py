@@ -1,5 +1,6 @@
 import os
 import time
+import re
 from werkzeug.utils import secure_filename
 from flask import render_template, request, redirect, url_for, session
 from models.models import de
@@ -21,7 +22,40 @@ class AuthController:
             crm_coren = (request.form.get("crm_coren") or request.form.get("crm_corem") or "").strip()
             senha = request.form.get("senha", "").strip()
             admin = Usuario.normalizar_perfil(request.form.get("admin", "nao"))
-
+            
+            if not re.search(r"[A-Z]", senha):
+                return render_template(
+                    "cadastro.html",
+                    error="A senha precisa ter pelo menos 1 letra maiúscula (A-Z)",
+                    nome=nome,
+                    email=email,
+                    cargo=cargo,
+                    crm_coren=crm_coren,
+                    admin=admin,
+                )
+            
+            if not re.search(r"[a-z]", senha):
+                return render_template(
+                    "cadastro.html",
+                    error="A senha precisa ter pelo menos 1 letra minúscula (a-z)",
+                    nome=nome,
+                    email=email,
+                    cargo=cargo,
+                    crm_coren=crm_coren,
+                    admin=admin,
+                )
+            
+            if not re.search(r"[^A-Za-z0-9]", senha):
+                return render_template(
+                    "cadastro.html",
+                    error="A senha precisa ter pelo menos 1 caractere especial (!@#$)",
+                    nome=nome,
+                    email=email,
+                    cargo=cargo,
+                    crm_coren=crm_coren,
+                    admin=admin,
+                )
+            
             if not nome or not email or not cargo or not senha:
                 return render_template("cadastro.html", error="Preencha os campos obrigatórios")
 
@@ -50,7 +84,8 @@ class AuthController:
                     crm_coren=crm_coren,
                     admin=admin,
                 )
-            return redirect(url_for("login"))
+
+            return redirect(url_for("login", mensagem="Usuário cadastrado com sucesso"))
 
         return render_template("cadastro.html")
 
@@ -66,9 +101,10 @@ class AuthController:
         if request.method == "POST":
             email = request.form.get("crm_coren", "").strip()
             senha = request.form.get("senha", "").strip()
+            mensagem = request.args.get("mensagem")
 
             if not email or not senha:
-                return render_template("login.html", error="Preencha todos os campos")
+                return render_template("login.html", success=mensagem)
 
             usuario = Usuario.autenticar(email, senha)
             if usuario:
@@ -105,9 +141,9 @@ class AuthController:
                     return redirect(url_for("usuarios"))
                 return redirect(url_for("dashboard"))
             else:
-                return render_template("login.html", error="CRM/COREN ou Senha incorretos")
+                return render_template("login.html", error="CRM/COREN ou Senha incorretos", success=mensagem)
 
-        return render_template("login.html")
+        return render_template("login.html", success=request.args.get("mensagem"))
 
     @staticmethod
     def usuarios():

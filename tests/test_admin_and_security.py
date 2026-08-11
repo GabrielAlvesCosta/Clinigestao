@@ -260,6 +260,48 @@ def test_22_sec_rota_edicao_usuario_bloqueada_sem_sessao(client):
     assert "/login" in res.headers['Location']
 
 
+def test_23_users_page_has_link_to_cadastro_page(client):
+    with client.session_transaction() as sess:
+        sess['usuario'] = {
+            'id': 1,
+            'nome': 'Admin',
+            'email': 'admin@test.com',
+            'cargo': 'Gerente',
+            'crm_coren': '12345',
+            'admin': 'sim',
+            'assinatura': ''
+        }
+
+    response = client.get('/usuarios')
+    assert response.status_code == 200
+    assert b'Cadastrar Usu\xc3\xa1rio' in response.data
+    assert b'/cadastro?chave=MED2026' in response.data
+
+
+def test_24_cadastro_success_stays_on_page_and_shows_message(client):
+    response = client.post('/cadastro?chave=MED2026', data={
+        'nome': 'Novo Usuário',
+        'email': 'novo@test.com',
+        'cargo': 'Enfermeiro',
+        'crm_coren': 'CRM-999',
+        'senha': 'senha123',
+        'confirmar_senha': 'senha123',
+        'admin': 'comum',
+        'assinatura': (BytesIO(b'fake-image-data'), 'assinatura.png'),
+    }, content_type='multipart/form-data')
+
+    assert response.status_code == 200
+    assert b'Usu\xc3\xa1rio cadastrado com sucesso' in response.data
+    assert b'Cadastro de Usu\xc3\xa1rios' in response.data
+
+
+def test_25_cadastro_page_has_navigation_buttons(client):
+    response = client.get('/cadastro?chave=MED2026')
+    assert response.status_code == 200
+    assert b'/usuarios' in response.data
+    assert b'/dashboard' in response.data
+
+
 def test_23_cadastro_aceita_perfil_comum(client):
     arquivo = (BytesIO(b"fake-image"), "assinatura.png")
 

@@ -1,3 +1,5 @@
+import os
+import socket
 from flask import Flask, render_template, session, redirect, url_for, request
 import sqlite3
 from models.models import init_db, get_db, en, de
@@ -135,6 +137,19 @@ def cadastrar_paciente():
     
     return redirect(url_for("dashboard"))
 
+def get_available_port(start_port=5000):
+    for port in range(start_port, start_port + 20):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.bind(("127.0.0.1", port))
+                return port
+            except OSError:
+                continue
+    return start_port
+
+
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, port=5000)
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", get_available_port()))
+    app.run(debug=True, host=host, port=port, use_reloader=False)

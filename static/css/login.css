@@ -148,3 +148,23 @@ input:hover {
     text-decoration: underline;
 }
 
+.message {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+.success-message {
+    background: #d1f2d8;
+    border: 1px solid #7ed67f;
+    color: #166534;
+}
+

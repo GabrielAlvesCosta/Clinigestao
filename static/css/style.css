@@ -149,14 +149,41 @@ input.invalid {
     border-color: #d9534f;
 }
 
+.message {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 .error-message {
     display: none;
     color: #d9534f;
-    font-size: 12px;
-    margin-top: 5px;
+    background: #f8d7da;
+    border: 1px solid #f5c2c7;
 }
 
 .error-message.active {
+    display: block;
+}
+
+.password-rule {
+    display: none;
+}
+
+.password-rule.active {
+    display: block;
+}
+
+.success-message {
+    display: none;
+    color: #0f5132;
+    background: #d1e7dd;
+    border: 1px solid #badbcc;
+}
+
+.success-message.active {
     display: block;
 }
 
@@ -412,12 +439,12 @@ table td button {
 }
 
 table td .btn-editar {
-    background-color: #0066cc;
+    background-color: #024D04;
     color: white;
 }
 
 table td .btn-editar:hover {
-    background-color: #0052a3;
+    background-color: #024D04;
     transform: translateY(-2px);
 }
 

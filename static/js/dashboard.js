@@ -142,8 +142,13 @@ async function atualizarDropdownProfissionais() {
 
         const usuarios = await res.json();
         
+        const apenasMedicos = usuarios.filter(u => {
+            const cargoDoUsuario = (u.admin || '').toLowerCase();
+            return cargoDoUsuario !== 'atendente';
+        });
+
         const optionsHTML = '<option value="">Selecione o Médico / Especialista...</option>' + 
-            usuarios.map(u => {
+            apenasMedicos.map(u => {
                 const nome = u.nome || u.username || 'Profissional Desconhecido';
                 return `<option value="${u.crm_coren}">${nome} (${u.crm_coren || 'S/N'})</option>`;
             }).join('');

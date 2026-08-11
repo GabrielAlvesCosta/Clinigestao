@@ -1,7 +1,8 @@
 import os
 import socket
-from flask import Flask, render_template, session, redirect, url_for, request
+import secrets
 import sqlite3
+from flask import Flask, render_template, session, redirect, url_for, request
 from models.models import init_db, get_db, en, de
 from controllers.controllers import api
 from controllers.auth_controller import AuthController, CHAVE_CADASTRO_ATUAL
@@ -141,7 +142,6 @@ def get_available_port(start_port=5000):
             except OSError:
                 continue
     return start_port
-
 
 if __name__ == '__main__':
     init_db()

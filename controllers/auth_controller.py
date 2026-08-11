@@ -3,7 +3,7 @@ import time
 import re
 import secrets
 from werkzeug.utils import secure_filename
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, flash
 from models.models import de
 from models.usuario import Usuario
 
@@ -17,10 +17,18 @@ class AuthController:
 
     @staticmethod
     def cadastro():
+        global CHAVE_CADASTRO_ATUAL
+
         chave_param = request.args.get('chave')
     
-        if chave_param != CHAVE_CADASTRO_ATUAL:
-            return "Acesso Negado: Chave de acesso inválida ou ausente.", 403
+        if CHAVE_CADASTRO_ATUAL is None or chave_param != CHAVE_CADASTRO_ATUAL:
+            flash("Esta chave de cadastro expirou ou já foi utilizada.", "danger")
+            pagina_anterior = request.referrer
+            
+            if not pagina_anterior:
+                pagina_anterior = url_for('dashboard')
+                
+            return redirect(pagina_anterior)
         
         if request.method == "POST":
             nome = request.form.get("nome", "").strip()
@@ -91,6 +99,7 @@ class AuthController:
                     crm_coren=crm_coren,
                     admin=admin,
                 )
+            CHAVE_CADASTRO_ATUAL = None
 
             return redirect(url_for("login", mensagem="Usuário cadastrado com sucesso"))
 

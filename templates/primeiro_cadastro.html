@@ -64,9 +64,7 @@
 
             <label for="perfil">Perfil</label>
             <select id="perfil" name="admin">
-                <option value="comum" {% if admin in ('comum', 'nao', '') %}selected{% endif %}>Comum (Usuário)</option>
                 <option value="admin" {% if admin == 'admin' %}selected{% endif %}>Admin</option>
-                <option value="atendente" {% if admin == 'atendente' %}selected{% endif %}>Atendente</option>
             </select>
 
             <div class="cadastro-link">

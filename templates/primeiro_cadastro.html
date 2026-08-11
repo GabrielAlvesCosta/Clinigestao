@@ -29,7 +29,7 @@
         <div class="message success-message active" role="status">{{ success }}</div>
         {% endif %}
 
-        <form id="cadastroForm" method="post" action="{{ url_for('cadastro', chave=CHAVE_CADASTRO_ATUAL) }}" enctype="multipart/form-data">
+        <form id="cadastroForm" method="post" action="{{ url_for('primeiro_cadastro', chave=CHAVE_CADASTRO_ATUAL) }}" enctype="multipart/form-data">
             <label for="nome">Nome</label>
             <input type="text" id="nome" name="nome" value="{{ nome or '' }}" placeholder="Digite o nome" required>
 

@@ -10,13 +10,13 @@ from models.usuario import Usuario
 
 CHAVE_CADASTRO_ATUAL = secrets.token_hex(4).upper()
 print("="*40)
-print(f"🔑 CHAVE DE CADASTRO GERADA: cadastro?chave={CHAVE_CADASTRO_ATUAL}")
+print(f"🔑 CHAVE DE CADASTRO GERADA: primeiro_cadastro?chave={CHAVE_CADASTRO_ATUAL}")
 print("="*40)
 
 class AuthController:
 
     @staticmethod
-    def cadastro():
+    def primeiro_cadastro():
         global CHAVE_CADASTRO_ATUAL
 
         chave_param = request.args.get('chave')
@@ -40,7 +40,7 @@ class AuthController:
             
             if not re.search(r"[A-Z]", senha):
                 return render_template(
-                    "cadastro.html",
+                    "primeiro_cadastro.html",
                     error="A senha precisa ter pelo menos 1 letra maiúscula (A-Z)",
                     nome=nome,
                     email=email,
@@ -51,7 +51,7 @@ class AuthController:
             
             if not re.search(r"[a-z]", senha):
                 return render_template(
-                    "cadastro.html",
+                    "primeiro_cadastro.html",
                     error="A senha precisa ter pelo menos 1 letra minúscula (a-z)",
                     nome=nome,
                     email=email,
@@ -62,7 +62,7 @@ class AuthController:
             
             if not re.search(r"[^A-Za-z0-9]", senha):
                 return render_template(
-                    "cadastro.html",
+                    "primeiro_cadastro.html",
                     error="A senha precisa ter pelo menos 1 caractere especial (!@#$)",
                     nome=nome,
                     email=email,
@@ -72,10 +72,10 @@ class AuthController:
                 )
             
             if not nome or not email or not cargo or not senha:
-                return render_template("cadastro.html", error="Preencha os campos obrigatórios")
+                return render_template("primeiro_cadastro.html", error="Preencha os campos obrigatórios")
 
             if Usuario.email_existe(email):
-                return render_template("cadastro.html", error="Email já cadastrado")
+                return render_template("primeiro_cadastro.html", error="Email já cadastrado")
 
             file = request.files.get("assinatura")
             assinatura_filename = ""
@@ -91,7 +91,7 @@ class AuthController:
                 usuario.salvar()
             except ValueError as exc:
                 return render_template(
-                    "cadastro.html",
+                    "primeiro_cadastro.html",
                     error=str(exc),
                     nome=nome,
                     email=email,
@@ -103,7 +103,7 @@ class AuthController:
 
             return redirect(url_for("login", mensagem="Usuário cadastrado com sucesso"))
 
-        return render_template("cadastro.html")
+        return render_template("primeiro_cadastro.html")
 
     @staticmethod
     def login():

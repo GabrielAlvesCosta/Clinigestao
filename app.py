@@ -4,21 +4,19 @@ from flask import Flask, render_template, session, redirect, url_for, request
 import sqlite3
 from models.models import init_db, get_db, en, de
 from controllers.controllers import api
-from controllers.auth_controller import AuthController
+from controllers.auth_controller import AuthController, CHAVE_CADASTRO_ATUAL
 from models.usuario import Usuario
 
 app = Flask(__name__, static_folder='static') 
 app.secret_key = "chave_mestra_clinical_pep"
 
-# 1. Inicia a estrutura do banco de dados
 
+@app.context_processor
+def inject_chave():
+    return dict(CHAVE_CADASTRO_ATUAL=CHAVE_CADASTRO_ATUAL)
 
-# 2. Registra o Blueprint das APIs (/api/pacientes, /api/prontuarios, etc.)
 app.register_blueprint(api, url_prefix='/api')
 
-# ==============================================================
-# ROTAS FRONTEND E GESTÃO DE SESSÃO
-# ==============================================================
 @app.route("/")
 def home():
     if "usuario" in session:
@@ -49,7 +47,6 @@ def dashboard():
             db.row_factory = sqlite3.Row
             pacientes_db = db.execute('SELECT * FROM pacientes ORDER BY id DESC').fetchall()
             
-            # Descriptografa os pacientes para exibição no Dashboard HTML
             for p in pacientes_db:
                 p_dict = dict(p)
                 p_dict['nome'] = de(p_dict.get('nome'))
@@ -60,7 +57,6 @@ def dashboard():
                 p_dict['contato'] = de(p_dict.get('contato'))
                 pacientes_descriptografados.append(p_dict)
                 
-            # Opcional: Reordenar alfabeticamente após descriptografar
             pacientes_descriptografados = sorted(pacientes_descriptografados, key=lambda k: (k['nome'] or '').lower())
     except Exception as e:
         print(f"Erro ao carregar dashboard: {e}")
@@ -121,7 +117,6 @@ def cadastrar_paciente():
     contato = request.form.get("contato", "Não informado").strip()
     
     with get_db() as db:
-        # Criptografa os dados sensíveis antes de salvar no banco de dados
         db.execute('''
             INSERT INTO pacientes (nome, dataNasc, genero, documento, cartao, contato)
             VALUES (?, ?, ?, ?, ?, ?)

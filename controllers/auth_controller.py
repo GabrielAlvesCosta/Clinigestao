@@ -1,10 +1,17 @@
 import os
 import time
 import re
+import secrets
 from werkzeug.utils import secure_filename
 from flask import render_template, request, redirect, url_for, session
 from models.models import de
 from models.usuario import Usuario
+
+
+CHAVE_CADASTRO_ATUAL = secrets.token_hex(4).upper()
+print("="*40)
+print(f"🔑 CHAVE DE CADASTRO GERADA: cadastro?chave={CHAVE_CADASTRO_ATUAL}")
+print("="*40)
 
 class AuthController:
 
@@ -12,7 +19,7 @@ class AuthController:
     def cadastro():
         chave_param = request.args.get('chave')
     
-        if chave_param != "MED2026":
+        if chave_param != CHAVE_CADASTRO_ATUAL:
             return "Acesso Negado: Chave de acesso inválida ou ausente.", 403
         
         if request.method == "POST":

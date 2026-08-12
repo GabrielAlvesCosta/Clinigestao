@@ -74,7 +74,7 @@ As tecnologias utilizadas no desenvolvimento do projeto incluem:
 
 > As tecnologias acima devem ser ajustadas caso o projeto utilize outras ferramentas ou frameworks no código final.
 
-## 📂 Organização do projeto
+Organização do projeto
 
 A estrutura pode variar de acordo com a organização utilizada pela equipe. De forma geral, o projeto é dividido entre arquivos responsáveis pela interface, estilos, scripts e armazenamento das informações.
 
@@ -89,7 +89,7 @@ Clinigestão/
 └── README.md
 ```
 
-## 🚀 Como executar
+ Como executar
 
 1. Clone este repositório:
 
@@ -101,7 +101,7 @@ git clone URL_DO_REPOSITORIO
 
 3. Execute o projeto utilizando a configuração definida pela equipe.
 
-## 👨‍💻 Minha contribuição
+ Minha contribuição
 
 Durante o desenvolvimento do Clinigestão, minha principal contribuição foi a implementação da funcionalidade de **cadastro de administradores**.
 

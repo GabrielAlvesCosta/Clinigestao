@@ -26,6 +26,10 @@ def home():
 
 @app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+    if Usuario.normalizar_perfil(session["usuario"].get("admin", "nao")) != "admin":
+        return redirect(url_for("dashboard"))
     return AuthController.cadastro()
 
 @app.route("/primeiro_cadastro", methods=["GET", "POST"])

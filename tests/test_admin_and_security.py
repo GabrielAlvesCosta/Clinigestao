@@ -226,11 +226,24 @@ def test_18_func_logout_limpa_sessao(client):
         assert "usuario" not in sess
 
 def test_19_func_acesso_tela_cadastro_carrega_corretamente(client):
+    with client.session_transaction() as sess:
+        sess['usuario'] = {"admin": "sim"}
+
     res = client.get('/cadastro')
     assert res.status_code == 200
     assert b"Cadastro" in res.data
 
+
 def test_20_func_acesso_negado_adm_para_usuario_comum(client):
+    with client.session_transaction() as sess:
+        sess['usuario'] = {"admin": "nao"}
+
+    res = client.get('/cadastro')
+    assert res.status_code == 302
+    assert "/dashboard" in res.headers['Location']
+
+
+def test_20_func_acesso_negado_sem_login_para_cadastro(client):
     with client.session_transaction() as sess:
         sess['usuario'] = {"admin": "nao"}
         

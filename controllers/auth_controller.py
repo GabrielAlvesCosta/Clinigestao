@@ -16,20 +16,7 @@ print("="*40)
 class AuthController:
 
     @staticmethod
-    def primeiro_cadastro():
-        global CHAVE_CADASTRO_ATUAL
-
-        chave_param = request.args.get('chave')
-    
-        if CHAVE_CADASTRO_ATUAL is None or chave_param != CHAVE_CADASTRO_ATUAL:
-            flash("Esta chave de cadastro expirou ou já foi utilizada.", "danger")
-            pagina_anterior = request.referrer
-            
-            if not pagina_anterior:
-                pagina_anterior = url_for('dashboard')
-                
-            return redirect(pagina_anterior)
-        
+    def _processar_cadastro(template_name, redirect_para_login=False):
         if request.method == "POST":
             nome = request.form.get("nome", "").strip()
             email = request.form.get("email", "").strip()
@@ -37,10 +24,10 @@ class AuthController:
             crm_coren = (request.form.get("crm_coren") or request.form.get("crm_corem") or "").strip()
             senha = request.form.get("senha", "").strip()
             admin = Usuario.normalizar_perfil(request.form.get("admin", "nao"))
-            
+
             if not re.search(r"[A-Z]", senha):
                 return render_template(
-                    "primeiro_cadastro.html",
+                    template_name,
                     error="A senha precisa ter pelo menos 1 letra maiúscula (A-Z)",
                     nome=nome,
                     email=email,
@@ -48,10 +35,10 @@ class AuthController:
                     crm_coren=crm_coren,
                     admin=admin,
                 )
-            
+
             if not re.search(r"[a-z]", senha):
                 return render_template(
-                    "primeiro_cadastro.html",
+                    template_name,
                     error="A senha precisa ter pelo menos 1 letra minúscula (a-z)",
                     nome=nome,
                     email=email,
@@ -59,10 +46,10 @@ class AuthController:
                     crm_coren=crm_coren,
                     admin=admin,
                 )
-            
+
             if not re.search(r"[^A-Za-z0-9]", senha):
                 return render_template(
-                    "primeiro_cadastro.html",
+                    template_name,
                     error="A senha precisa ter pelo menos 1 caractere especial (!@#$)",
                     nome=nome,
                     email=email,
@@ -70,12 +57,12 @@ class AuthController:
                     crm_coren=crm_coren,
                     admin=admin,
                 )
-            
+
             if not nome or not email or not cargo or not senha:
-                return render_template("primeiro_cadastro.html", error="Preencha os campos obrigatórios")
+                return render_template(template_name, error="Preencha os campos obrigatórios")
 
             if Usuario.email_existe(email):
-                return render_template("primeiro_cadastro.html", error="Email já cadastrado")
+                return render_template(template_name, error="Email já cadastrado")
 
             file = request.files.get("assinatura")
             assinatura_filename = ""
@@ -91,7 +78,7 @@ class AuthController:
                 usuario.salvar()
             except ValueError as exc:
                 return render_template(
-                    "primeiro_cadastro.html",
+                    template_name,
                     error=str(exc),
                     nome=nome,
                     email=email,
@@ -99,9 +86,48 @@ class AuthController:
                     crm_coren=crm_coren,
                     admin=admin,
                 )
-            CHAVE_CADASTRO_ATUAL = None
 
-            return redirect(url_for("login", mensagem="Usuário cadastrado com sucesso"))
+            if redirect_para_login:
+                return redirect(url_for("login", mensagem="Usuário cadastrado com sucesso"))
+            return render_template(template_name, success="Usuário cadastrado com sucesso")
+
+        return render_template(template_name)
+
+    @staticmethod
+    def cadastro():
+        return AuthController._processar_cadastro("cadastro.html", redirect_para_login=False)
+
+    @staticmethod
+    def primeiro_cadastro():
+        global CHAVE_CADASTRO_ATUAL
+
+        chave_param = request.args.get('chave')
+
+        if request.method == "GET" and (CHAVE_CADASTRO_ATUAL is None or chave_param != CHAVE_CADASTRO_ATUAL):
+            flash("Esta chave de cadastro expirou ou já foi utilizada.", "danger")
+            pagina_anterior = request.referrer
+
+            if not pagina_anterior:
+                pagina_anterior = url_for('dashboard')
+
+            return redirect(pagina_anterior)
+
+        if request.method == "POST":
+            if CHAVE_CADASTRO_ATUAL is None or chave_param != CHAVE_CADASTRO_ATUAL:
+                flash("Esta chave de cadastro expirou ou já foi utilizada.", "danger")
+                pagina_anterior = request.referrer
+
+                if not pagina_anterior:
+                    pagina_anterior = url_for('dashboard')
+
+                return redirect(pagina_anterior)
+
+            resultado = AuthController._processar_cadastro("primeiro_cadastro.html", redirect_para_login=True)
+            if isinstance(resultado, str):
+                return resultado
+
+            CHAVE_CADASTRO_ATUAL = None
+            return resultado
 
         return render_template("primeiro_cadastro.html")
 

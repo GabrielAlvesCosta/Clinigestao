@@ -24,6 +24,10 @@ def home():
         return redirect(url_for("dashboard"))
     return redirect(url_for("login"))
 
+@app.route("/cadastro", methods=["GET", "POST"])
+def cadastro():
+    return AuthController.cadastro()
+
 @app.route("/primeiro_cadastro", methods=["GET", "POST"])
 def primeiro_cadastro():
     return AuthController.primeiro_cadastro()

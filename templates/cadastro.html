@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro</title>
+    <title>Cadastro - Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
@@ -19,7 +19,7 @@
             </a>
         </div>
 
-        <h1>Cadastro de Usuários adm</h1>
+        <h1>Cadastro de Usuários</h1>
 
         {% if error %}
         <div class="message error-message active" role="alert">{{ error }}</div>
@@ -29,7 +29,7 @@
         <div class="message success-message active" role="status">{{ success }}</div>
         {% endif %}
 
-        <form id="cadastroForm" method="post" action="{{ url_for('primeiro_cadastro', chave=CHAVE_CADASTRO_ATUAL) }}" enctype="multipart/form-data">
+        <form id="cadastroForm" method="post" action="{{ url_for('cadastro') }}" enctype="multipart/form-data">
             <label for="nome">Nome</label>
             <input type="text" id="nome" name="nome" value="{{ nome or '' }}" placeholder="Digite o nome" required>
 
@@ -64,7 +64,9 @@
 
             <label for="perfil">Perfil</label>
             <select id="perfil" name="admin">
+                <option value="comum" {% if admin in ('comum', 'nao', '') %}selected{% endif %}>Comum (Usuário)</option>
                 <option value="admin" {% if admin == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="atendente" {% if admin == 'atendente' %}selected{% endif %}>Atendente</option>
             </select>
 
             <div class="cadastro-link">
@@ -75,6 +77,6 @@
         </form>
     </div>
 
-    <script src="{{ url_for('static', filename='js/cadastro.js') }}"></script> 
+    <script src="{{ url_for('static', filename='js/cadastro.js') }}"></script>
 </body>
 </html>

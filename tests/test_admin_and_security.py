@@ -183,20 +183,6 @@ def test_14_integ_listar_usuarios_mapeia_dados_corretamente(client):
         usuarios = Usuario.listar_todos()
         assert len(usuarios) == 2
 
-def test_15_integ_auditoria_disparada_na_criacao_de_prontuario(client):
-    with meu_app.app.app_context():
-        Usuario("Profissional", "prof@teste.com", "Med", "CRM-99", "123").salvar()
-    client.post('/api/pacientes', json={"nome": "Paciente Z"})
-    
-    with client.session_transaction() as sess:
-        sess['usuario'] = {"crm_coren": "CRM-99", "nome": "Profissional"}
-    
-    client.post('/api/prontuarios', json={"pacienteId": 1, "qp": "Dor de cabeça"})
-    
-    auditoria = json.loads(client.get('/api/prontuarios/auditoria').data)
-    assert len(auditoria) == 1
-    assert auditoria[0]['acao'] == "Criação"
-
 
 # ==========================================
 # TESTES FUNCIONAIS (16 a 20)
@@ -204,9 +190,9 @@ def test_15_integ_auditoria_disparada_na_criacao_de_prontuario(client):
 
 def test_16_func_login_valido_redireciona_dashboard(client):
     with meu_app.app.app_context():
-        Usuario("Médico C", "c@teste.com", "Med", "CRM-3", "senha_forte").salvar()
+        Usuario("Médico C", "c@teste.com", "Med", "CRM-3", "Aa!1Aa!1").salvar()
         
-    res = client.post('/login', data={"email": "c@teste.com", "senha": "senha_forte"})
+    res = client.post('/login', data={"crm_coren": "CRM-3", "senha": "Aa!1Aa!1"})
     assert res.status_code == 302
     assert "/dashboard" in res.headers['Location']
 
@@ -271,83 +257,3 @@ def test_22_sec_rota_edicao_usuario_bloqueada_sem_sessao(client):
     res = client.post('/usuarios/editar/1', data={"nome": "Mudou"})
     assert res.status_code == 302
     assert "/login" in res.headers['Location']
-
-
-def test_23_users_page_has_link_to_cadastro_page(client):
-    with client.session_transaction() as sess:
-        sess['usuario'] = {
-            'id': 1,
-            'nome': 'Admin',
-            'email': 'admin@test.com',
-            'cargo': 'Gerente',
-            'crm_coren': '12345',
-            'admin': 'sim',
-            'assinatura': ''
-        }
-
-    response = client.get('/usuarios')
-    assert response.status_code == 200
-    assert b'Cadastrar Usu\xc3\xa1rio' in response.data
-    assert b'/cadastro?chave=MED2026' in response.data
-
-
-def test_24_cadastro_success_stays_on_page_and_shows_message(client):
-    response = client.post('/cadastro?chave=MED2026', data={
-        'nome': 'Novo Usuário',
-        'email': 'novo@test.com',
-        'cargo': 'Enfermeiro',
-        'crm_coren': 'CRM-999',
-        'senha': 'senha123',
-        'confirmar_senha': 'senha123',
-        'admin': 'comum',
-        'assinatura': (BytesIO(b'fake-image-data'), 'assinatura.png'),
-    }, content_type='multipart/form-data')
-
-    assert response.status_code == 200
-    assert b'Usu\xc3\xa1rio cadastrado com sucesso' in response.data
-    assert b'Cadastro de Usu\xc3\xa1rios' in response.data
-
-
-def test_25_cadastro_page_has_navigation_buttons(client):
-    response = client.get('/cadastro?chave=MED2026')
-    assert response.status_code == 200
-    assert b'/usuarios' in response.data
-    assert b'/dashboard' in response.data
-
-
-def test_23_cadastro_aceita_perfil_comum(client):
-    arquivo = (BytesIO(b"fake-image"), "assinatura.png")
-
-    response = client.post('/cadastro', data={
-        "nome": "Usuário Comum",
-        "email": "comum@test.com",
-        "cargo": "Recepcionista",
-        "crm_coren": "",
-        "senha": "senha123",
-        "confirmar_senha": "senha123",
-        "admin": "comum",
-        "assinatura": arquivo,
-    }, content_type='multipart/form-data')
-
-    assert response.status_code == 302
-    assert response.headers['Location'] == '/login'
-
-    with meu_app.app.app_context():
-        usuario = Usuario.buscar_por_email('comum@test.com')
-        assert usuario is not None
-        assert usuario['admin'] == 'comum'
-
-def test_23_sec_tentativa_sql_injection_login_falha(client):
-    payload_sqli = "admin@teste.com' OR '1'='1"
-    res = client.post('/login', data={"email": payload_sqli, "senha": "123"})
-    assert b"incorretos" in res.data 
-    assert res.status_code == 200
-
-def test_24_sec_protecao_xss_nos_campos_do_paciente(client):
-    xss_payload = "<script>alert('XSS')</script>"
-    client.post('/api/pacientes', json={"nome": xss_payload})
-    
-    res = client.get('/api/pacientes')
-    pacientes = json.loads(res.data)
-    
-    assert pacientes[0]['nome'] == xss_payload

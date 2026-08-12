@@ -9,9 +9,6 @@ from models.usuario import Usuario
 
 
 CHAVE_CADASTRO_ATUAL = secrets.token_hex(4).upper()
-print("="*40)
-print(f"🔑 CHAVE DE CADASTRO GERADA: primeiro_cadastro?chave={CHAVE_CADASTRO_ATUAL}")
-print("="*40)
 
 class AuthController:
 

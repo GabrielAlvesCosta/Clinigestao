@@ -176,3 +176,10 @@ input:hover {
     color: #166534;
 }
 
+.logo-flutuante {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  height: 180px;
+  z-index: 999;
+}

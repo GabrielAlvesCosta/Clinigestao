@@ -3,23 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro</title>
+    <title>Primeiro Cadastro</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 
     <div class="container">
-        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom: 20px;">
-            <a href="{{ url_for('usuarios') }}" style="background: #0d6efd; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
-                <i class="fa-solid fa-users"></i> Usuários
-            </a>
-            <a href="{{ url_for('dashboard') }}" style="background: #0d6efd; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px;">
-                <i class="fa-solid fa-gauge-high"></i> Dashboard
-            </a>
-        </div>
 
-        <h1>Cadastro de Usuários adm</h1>
+        <h1>Primeiro Cadastro de Administrador</h1>
 
         {% if error %}
         <div class="message error-message active" role="alert">{{ error }}</div>

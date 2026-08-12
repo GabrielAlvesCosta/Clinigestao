@@ -141,20 +141,18 @@ class AuthController:
             return redirect(url_for("dashboard"))
 
         if request.method == "POST":
-            email = request.form.get("crm_coren", "").strip()
+            crm_coren = request.form.get("crm_coren", "").strip()
             senha = request.form.get("senha", "").strip()
             mensagem = request.args.get("mensagem")
 
-            if not email or not senha:
-                return render_template("login.html", success=mensagem)
+            if not crm_coren or not senha:
+                return render_template("login.html", success=mensagem, CHAVE_CADASTRO_ATUAL=CHAVE_CADASTRO_ATUAL)
 
-            usuario = Usuario.autenticar(email, senha)
+            usuario = Usuario.autenticar(crm_coren, senha)
             if usuario:
-                # Tratamento robusto para suportar tanto dicionários/Row quanto tuplas do banco
                 try:
-                    # Tenta acessar usando chaves de texto (Dicionário / sqlite3.Row)
                     dados_sessao = {
-                        "id": usuario["id"],  # <--- ID ADICIONADO AQUI
+                        "id": usuario["id"],
                         "nome": usuario["nome"],
                         "email": usuario["email"],
                         "cargo": usuario["cargo"],
@@ -164,9 +162,8 @@ class AuthController:
                     }
                     admin_value = Usuario.normalizar_perfil(usuario.get("admin", "nao"))
                 except (KeyError, TypeError):
-                    # Se falhar (for uma tupla simples), acessa por índices numéricos
                     dados_sessao = {
-                        "id": usuario[0],     # <--- ID ADICIONADO AQUI (Posição 0 no banco)
+                        "id": usuario[0],
                         "crm_coren": de(usuario[1]),
                         "nome": usuario[2],
                         "email": usuario[3],
@@ -176,17 +173,15 @@ class AuthController:
                     }
                     admin_value = Usuario.normalizar_perfil(usuario[6])
 
-                # Salva os dados tratados na sessão
                 session["usuario"] = dados_sessao
 
                 if admin_value == "admin":
                     return redirect(url_for("usuarios"))
                 return redirect(url_for("dashboard"))
             else:
-                return render_template("login.html", error="CRM/COREN ou Senha incorretos", success=mensagem)
+                return render_template("login.html", error="CRM/COREN ou Senha incorretos", success=mensagem, CHAVE_CADASTRO_ATUAL=CHAVE_CADASTRO_ATUAL)
 
-        return render_template("login.html", success=request.args.get("mensagem"))
-
+        return render_template("login.html", success=request.args.get("mensagem"), CHAVE_CADASTRO_ATUAL=CHAVE_CADASTRO_ATUAL)
     @staticmethod
     def usuarios():
         if "usuario" not in session:

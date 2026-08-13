@@ -24,9 +24,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm" style="background-color: #1F7F37 !important;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-                <i class="bi bi-heart-pulse-fill text-danger"></i>
-                <span class="fs-4 fw-medium">Clinigestão</span>
-                <span class="badge bg-warning text-dark badge-lgpd-hover ms-3">
+                <img src="static/img/logo.png" alt="Logo Clinigestão" height="76" class="d-inline-block align-text-top">
+                <span class="badge bg-warning text-dark badge-lgpd-hover ms-2">
                     <i class="bi bi-shield-lock-fill"></i> LGPD Protected
                 </span>
             </a>
@@ -37,16 +36,16 @@
             </div>
                 
                 {% if usuario and (usuario.admin|string|lower) == 'admin' %}
-                    <a href="{{ url_for('usuarios') }}" class="btn btn-primary btn-sm rounded-pill fw-bold px-3 d-flex align-items-center gap-1">
+                    <a href="{{ url_for('usuarios') }}" class="btn btn-primary btn-lg rounded-pill fw-bold px-3 d-flex align-items-center gap-1">
                         <i class="bi bi-people-fill"></i> Usuários
                     </a>
                     
-                    <a href="{{ url_for('cadastro') }}" class="btn btn-primary btn-sm rounded-pill fw-bold px-3 d-flex align-items-center gap-1">
+                    <a href="{{ url_for('cadastro') }}" class="btn btn-primary btn-lg rounded-pill fw-bold px-3 d-flex align-items-center gap-1">
                         <i class="bi bi-people-fill"></i> Cadastro
                     </a>
                 {% endif %}
 
-                    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm rounded-pill fw-bold px-3" onclick="limparRastrosLocais()">
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-lg rounded-pill fw-bold px-3" onclick="limparRastrosLocais()">
                          <i class="bi bi-box-arrow-right"></i> Sair
                     </a>
             </div>

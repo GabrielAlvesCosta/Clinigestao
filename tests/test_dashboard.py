@@ -224,16 +224,68 @@ def test_20_edicao_paciente_inexistente(client):
     })
     assert res.status_code in (200, 201)
 
+import json
+
+import json
+
+import json
+import uuid
+
 def test_21_isolamento_atualizacao_paciente(client):
-    res_a = client.post('/api/pacientes', json={"nome": "Paciente A", "dataNasc": "2000-01-01", "genero": "M", "documento": "111", "cartao": "1", "contato": "1"})
-    res_b = client.post('/api/pacientes', json={"nome": "Paciente B", "dataNasc": "2000-01-01", "genero": "M", "documento": "222", "cartao": "2", "contato": "2"})
-    
-    p_id_a = json.loads(res_a.data)["id"]
-    client.put('/api/pacientes', json={"id": p_id_a, "nome": "A Mod", "dataNasc": "2000-01-01", "genero": "M", "documento": "999", "cartao": "1", "contato": "1"})
-    
-    pacientes = json.loads(client.get('/api/pacientes').data)
-    paciente_b = next(p for p in pacientes if p['nome'] == "Paciente B")
-    assert paciente_b['documento'] == "222" 
+    # Gera documentos 100% únicos para não conflitar com nada no banco
+    doc_a = f"doc_a_{uuid.uuid4().hex[:6]}"
+    doc_b = f"doc_b_{uuid.uuid4().hex[:6]}"
+    doc_a_modificado = f"doc_a_mod_{uuid.uuid4().hex[:6]}"
+
+    # 1. Cadastra o Paciente A
+    res_a = client.post('/api/pacientes', json={
+        "nome": "Paciente A", 
+        "dataNasc": "2000-01-01", 
+        "genero": "M", 
+        "documento": doc_a, 
+        "cartao": "1", 
+        "contato": "1"
+    })
+    assert res_a.status_code in [200, 201], f"Falha ao criar Paciente A: {res_a.data.decode('utf-8')}"
+
+    # 2. Cadastra o Paciente B (com documento diferente)
+    res_b = client.post('/api/pacientes', json={
+        "nome": "Paciente B", 
+        "dataNasc": "2000-01-01", 
+        "genero": "M", 
+        "documento": doc_b, 
+        "cartao": "2", 
+        "contato": "2"
+    })
+    assert res_b.status_code in [200, 201], f"Falha ao criar Paciente B: {res_b.data.decode('utf-8')}"
+
+    # 3. Busca a lista e encontra o ID do Paciente A pelo documento único
+    res_get = client.get('/api/pacientes')
+    dados = json.loads(res_get.data)
+    pacientes_iniciais = dados.get("pacientes", dados) if isinstance(dados, dict) else dados
+
+    paciente_a = next(p for p in pacientes_iniciais if p.get('documento') == doc_a)
+    p_id_a = paciente_a['id']
+
+    # 4. Atualiza APENAS o Paciente A
+    client.put('/api/pacientes', json={
+        "id": p_id_a, 
+        "nome": "A Modificado", 
+        "dataNasc": "2000-01-01", 
+        "genero": "M", 
+        "documento": doc_a_modificado, 
+        "cartao": "1", 
+        "contato": "1"
+    })
+
+    # 5. Verifica se o Paciente B PERMANECEU intacto
+    res_finais = client.get('/api/pacientes')
+    dados_finais = json.loads(res_finais.data)
+    pacientes_finais = dados_finais.get("pacientes", dados_finais) if isinstance(dados_finais, dict) else dados_finais
+
+    paciente_b = next(p for p in pacientes_finais if p.get('documento') == doc_b)
+    assert paciente_b['documento'] == doc_b
+    assert paciente_b['nome'] == "Paciente B"
 
 def test_22_paciente_caracteres_especiais_utf8(client):
     nome_complexo = "João Conceição ç á é í ó ú & * @ !"
@@ -313,7 +365,7 @@ def test_32_xss_injection_prontuario(client):
 def test_33_paciente_put_sem_id(client):
     client.post('/api/pacientes', json={"nome": "Teste PUT", "dataNasc": "2000-01-01", "genero": "M", "documento": "0", "cartao": "0", "contato": "0"})
     res = client.put('/api/pacientes', json={"nome": "Novo Nome Hack", "genero": "M", "documento": "0", "cartao": "0", "contato": "0"})
-    assert res.status_code in (200, 201)
+    assert res.status_code == 400
 
 def test_34_agendar_consulta_choque_mesmo_medico(client):
     client.post('/api/consultas', json={

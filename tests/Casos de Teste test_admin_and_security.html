@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Documento de Casos de Teste &mdash; Sistema de Gestão Clínica</title>
+    <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+  display: none;
+}
+
+</style>
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+</style>
+<style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+</head>
+<body class="vscode-body vscode-light">
+    <h1 id="documento-de-casos-de-teste--sistema-gestao-clinica">Documento de Casos de Teste — Sistema de Gestão Clínica</h1>
+<p><strong>Módulos:</strong> <code>app.py</code>, <code>models/models.py</code>, <code>models/usuario.py</code><br>
+<strong>Arquivos de testes:</strong> <code>tests/test_app.py</code>, <code>tests/test_models.py</code>, <code>tests/test_usuario.py</code><br>
+<strong>Framework:</strong> pytest com SQLite em memória</p>
+<hr>
+<h2 id="funcoes-testadas">Funções e Rotas testadas</h2>
+<table>
+<thead>
+<tr>
+<th>Função / Rota</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /adm</code>, <code>/usuarios</code>, <code>/dashboard</code>, <code>/cadastro</code></td>
+<td>Gerenciam as interfaces da aplicação, com regras de redirecionamento e proteção de sessão.</td>
+</tr>
+<tr>
+<td><code>POST /api/pacientes</code>, <code>/api/consultas</code></td>
+<td>Rotas de integração para cadastro de pacientes e agendamento, persistindo no SQLite.</td>
+</tr>
+<tr>
+<td><code>en(dado)</code>, <code>de(dado)</code>, <code>_looks_encrypted()</code></td>
+<td>Funções utilitárias de criptografia que ofuscam informações sensíveis de pacientes/médicos.</td>
+</tr>
+<tr>
+<td><code>Usuario</code> (Model)</td>
+<td>Classe responsável pelas regras de negócio (salvar, autenticar, atualizar, listar, verificar email).</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="casos-de-teste">Casos de Teste (01 a 22)</h2>
+<hr>
+
+<h3 id="ct-01">CT-01 — Redirecionamento de Administrador</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-01</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>GET /adm</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Garantir que um usuário com privilégio de administrador seja redirecionado para a rota correta de gestão.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Sessão com objeto de usuário completo contendo <code>admin='sim'</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Código HTTP <code>302</code> e cabeçalho <code>Location: /usuarios</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Simulação de sessão com <code>client.session_transaction()</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Caso funcional (caminho feliz)</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_01_adm_route_redirects_to_admin_panel_for_admin_user</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> client.session_transaction() <span class="hljs-keyword">as</span> sess:
+        sess[<span class="hljs-string">'usuario'</span>] = {
+            <span class="hljs-string">'id'</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-string">'nome'</span>: <span class="hljs-string">'Admin'</span>,
+            <span class="hljs-string">'email'</span>: <span class="hljs-string">'admin@test.com'</span>,
+            <span class="hljs-string">'cargo'</span>: <span class="hljs-string">'Gerente'</span>,
+            <span class="hljs-string">'crm_coren'</span>: <span class="hljs-string">'12345'</span>,
+            <span class="hljs-string">'admin'</span>: <span class="hljs-string">'sim'</span>,
+            <span class="hljs-string">'assinatura'</span>: <span class="hljs-string">''</span>
+        }
+    response = client.get(<span class="hljs-string">'/adm'</span>)
+    <span class="hljs-keyword">assert</span> response.status_code == <span class="hljs-number">302</span>
+    <span class="hljs-keyword">assert</span> response.headers[<span class="hljs-string">'Location'</span>] == <span class="hljs-string">'/usuarios'</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-02">CT-02 — Renderização da Página de Usuários</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-02</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>GET /usuarios</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Validar se a listagem exibe corretamente os dados inseridos no banco.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Sessão admin e criação do <code>Usuario('Dr. A', ...)</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Código HTTP <code>200</code> e presença de <code>b'Dr. A'</code> no HTML.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Injeção de dados no banco + Asserção em <code>response.data</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Integração</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_02_users_page_renders_with_sqlite_rows</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> client.session_transaction() <span class="hljs-keyword">as</span> sess:
+        sess[<span class="hljs-string">'usuario'</span>] = {<span class="hljs-string">'id'</span>: <span class="hljs-number">1</span>, <span class="hljs-string">'admin'</span>: <span class="hljs-string">'sim'</span>}
+    Usuario(<span class="hljs-string">'Dr. A'</span>, <span class="hljs-string">'dr_a@test.com'</span>, <span class="hljs-string">'Médico'</span>, <span class="hljs-string">'CRM-123'</span>, <span class="hljs-string">'senha'</span>).salvar()
+    response = client.get(<span class="hljs-string">'/usuarios'</span>)
+    <span class="hljs-keyword">assert</span> response.status_code == <span class="hljs-number">200</span>
+    <span class="hljs-keyword">assert</span> <span class="hljs-string">b'Dr. A'</span> <span class="hljs-keyword">in</span> response.data
+</code></pre>
+<hr>
+
+<h3 id="ct-03">CT-03 — Unicidade e Criptografia do CRM/COREN</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-03</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.salvar()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Impedir a inserção de usuários com o mesmo documento e validar ofuscação.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Dois cadastros com <code>crm_coren = 'CRM-123'</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Levantamento de <code>ValueError</code> e ofuscação (<code>gAAAAA...</code>).</td></tr>
+<tr><td><strong>Técnica</strong></td><td><code>pytest.raises(ValueError)</code> e query SQLite</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Regra de Negócio</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_03_crm_coren_unique_and_encrypted</span>():
+    <span class="hljs-keyword">with</span> app.app_context():
+        Usuario(<span class="hljs-string">'Dr. A'</span>, <span class="hljs-string">'a@t.com'</span>, <span class="hljs-string">'Médico'</span>, <span class="hljs-string">'CRM-123'</span>, <span class="hljs-string">'s'</span>).salvar()
+        <span class="hljs-keyword">with</span> pytest.raises(ValueError):
+            Usuario(<span class="hljs-string">'Dr. B'</span>, <span class="hljs-string">'b@t.com'</span>, <span class="hljs-string">'Médico'</span>, <span class="hljs-string">'CRM-123'</span>, <span class="hljs-string">'s'</span>).salvar()
+        row = get_db().execute(<span class="hljs-string">"SELECT crm_coren FROM usuarios"</span>).fetchone()
+        <span class="hljs-keyword">assert</span> row[<span class="hljs-string">'crm_coren'</span>].startswith(<span class="hljs-string">'gAAAAA'</span>)
+</code></pre>
+<hr>
+
+<h3 id="ct-04">CT-04 — Ocultação de Dados Unitária</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-04</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>en(dado)</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Confirmar isoladamente que o método modifica a string original.</td></tr>
+<tr><td><strong>Entradas</strong></td><td><code>"dado_secreto"</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>String resultante não pode ser igual à de entrada.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Comparação <code>!=</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_04_unit_encryption_oculta_dados</span>():
+    resultado = en(<span class="hljs-string">"dado_secreto"</span>)
+    <span class="hljs-keyword">assert</span> resultado != <span class="hljs-string">"dado_secreto"</span>
+    <span class="hljs-keyword">assert</span> resultado.startswith(<span class="hljs-string">"gAAAAA"</span>)
+</code></pre>
+<hr>
+
+<h3 id="ct-05">CT-05 — Restauração de Dados Unitária</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-05</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>de(dado_criptografado)</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Garantir que a descriptografia retorna o valor exato original.</td></tr>
+<tr><td><strong>Entradas</strong></td><td><code>en("dado_secreto")</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td><code>"dado_secreto"</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Comparação <code>==</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_05_unit_decryption_restaura_dados</span>():
+    original = <span class="hljs-string">"dado_secreto"</span>
+    criptografado = en(original)
+    <span class="hljs-keyword">assert</span> de(criptografado) == original
+</code></pre>
+<hr>
+
+<h3 id="ct-06">CT-06 — Validação de Formato Criptografado</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-06</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>_looks_encrypted(dado)</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Testar se o método identifica corretamente o prefixo Fernet (<code>gAAAAA</code>).</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Uma string válida ofuscada e uma string comum.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td><code>True</code> para a primeira, <code>False</code> para a segunda.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Asserção booleana dupla.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_06_unit_looks_encrypted</span>():
+    <span class="hljs-keyword">assert</span> _looks_encrypted(<span class="hljs-string">"gAAAAABk..."</span>) <span class="hljs-keyword">is</span> <span class="hljs-literal">True</span>
+    <span class="hljs-keyword">assert</span> _looks_encrypted(<span class="hljs-string">"CRM-123"</span>) <span class="hljs-keyword">is</span> <span class="hljs-literal">False</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-07">CT-07 — Tratamento de Vazios na Criptografia</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-07</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>en()</code> e <code>de()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Garantir que strings vazias e <code>None</code> não quebrem o algoritmo.</td></tr>
+<tr><td><strong>Entradas</strong></td><td><code>""</code> e <code>None</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>O mesmo valor original.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Teste de valores nulos (Edge Cases).</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_07_unit_funcoes_criptografia_ignoram_vazios</span>():
+    <span class="hljs-keyword">assert</span> en(<span class="hljs-string">""</span>) == <span class="hljs-string">""</span>
+    <span class="hljs-keyword">assert</span> de(<span class="hljs-literal">None</span>) <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-08">CT-08 — Instanciação da Classe Usuario</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-08</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.__init__</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Validar se os atributos padrão são atribuídos (admin: 'nao', assinatura: '').</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Apenas os campos obrigatórios.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Objeto deve conter os defaults corretamente parametrizados.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Inspeção de propriedades do objeto.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_08_unit_usuario_instanciacao</span>():
+    u = Usuario(<span class="hljs-string">'João'</span>, <span class="hljs-string">'j@t.com'</span>, <span class="hljs-string">'Médico'</span>, <span class="hljs-string">'123'</span>, <span class="hljs-string">'senha'</span>)
+    <span class="hljs-keyword">assert</span> u.admin == <span class="hljs-string">'nao'</span>
+    <span class="hljs-keyword">assert</span> u.assinatura == <span class="hljs-string">''</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-09">CT-09 — Verificação de Email com Mock</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-09</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.email_existe()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Isolar a verificação de existência de email simulando retorno do DB.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Mock retornando <code>(1,)</code> para <code>"teste@teste.com"</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td><code>True</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td><code>@patch</code> e <code>MagicMock</code> no <code>get_db</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário / Mock</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-meta">@patch(<span class="hljs-string">'models.usuario.get_db'</span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">test_09_unit_email_existe_mockado</span>(<span class="hljs-params">mock_get_db</span>):
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (<span class="hljs-number">1</span>,)
+    mock_get_db.return_value.__enter__.return_value.execute.return_value = mock_cursor
+
+    <span class="hljs-keyword">assert</span> Usuario.email_existe(<span class="hljs-string">"teste@teste.com"</span>) <span class="hljs-keyword">is</span> <span class="hljs-literal">True</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-10">CT-10 — Autenticação Mockada de Senha Inválida</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-10</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.autenticar()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Avaliar se a autenticação falha quando as credenciais não correspondem ao hash.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Mock com hash falso e tentativa com <code>"senha_errada"</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Retornar <code>None</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td><code>@patch</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Unitário / Mock</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-meta">@patch(<span class="hljs-string">'models.usuario.get_db'</span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">test_10_unit_senha_invalida_mockado</span>(<span class="hljs-params">mock_db</span>):
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [{<span class="hljs-string">"id"</span>: <span class="hljs-number">1</span>, <span class="hljs-string">"senha"</span>: <span class="hljs-string">"pbkdf2:falsohash"</span>}]
+    mock_db.return_value.__enter__.return_value.execute.return_value = mock_cursor
+
+    <span class="hljs-keyword">assert</span> Usuario.autenticar(<span class="hljs-string">"a@t.com"</span>, <span class="hljs-string">"senha_errada"</span>) <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-11">CT-11 — Integração de Cadastro de Paciente</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-11</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>POST /api/pacientes</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Verificar a persistência física dos dados via rota JSON diretamente no SQLite.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>JSON com <code>nome</code>, <code>dataNasc</code>, etc.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Status HTTP <code>201</code> e presença do registro na tabela.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Client Post + Select Nativo</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Integração</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_11_integ_cadastro_paciente_salva_no_banco</span>(<span class="hljs-params">client</span>):
+    res = client.post(<span class="hljs-string">'/api/pacientes'</span>, json={<span class="hljs-string">"nome"</span>: <span class="hljs-string">"João"</span>, <span class="hljs-string">"documento"</span>: <span class="hljs-string">"123"</span>})
+    <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">201</span>
+    
+    conn = sqlite3.connect(DB_FILE)
+    linhas = conn.execute(<span class="hljs-string">"SELECT id FROM pacientes"</span>).fetchall()
+    conn.close()
+    <span class="hljs-keyword">assert</span> <span class="hljs-built_in">len</span>(linhas) == <span class="hljs-number">1</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-12">CT-12 — Atualização de Perfil com Reflexo no Banco</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-12</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.atualizar()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Validar se as modificações nos atributos refletem na persistência.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Id=1, <code>nome='Nome Novo'</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Query posterior deve retornar <code>'Nome Novo'</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Read-Write-Read Pattern</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Integração</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_12_integ_atualizar_perfil</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> app.app_context():
+        Usuario(<span class="hljs-string">'Velho'</span>, <span class="hljs-string">'a@a.com'</span>, <span class="hljs-string">'Gerente'</span>, <span class="hljs-string">'11'</span>, <span class="hljs-string">'ss'</span>).salvar()
+        Usuario.atualizar(<span class="hljs-number">1</span>, <span class="hljs-string">'Nome Novo'</span>, <span class="hljs-string">'Gerente'</span>)
+        row = get_db().execute(<span class="hljs-string">"SELECT nome FROM usuarios WHERE id=1"</span>).fetchone()
+        <span class="hljs-keyword">assert</span> row[<span class="hljs-string">'nome'</span>] == <span class="hljs-string">'Nome Novo'</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-13">CT-13 — Consulta Intercepta Paciente Inválido</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-13</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>POST /api/consultas</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Bloquear criação de consulta atrelada a paciente inexistente.</td></tr>
+<tr><td><strong>Entradas</strong></td><td><code>paciente_id: 999</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Status HTTP <code>400</code> e chave de erro.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Asserção em chave JSON da resposta.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Integração / Regra de Negócio</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_13_integ_consulta_paciente_invalido</span>(<span class="hljs-params">client</span>):
+    res = client.post(<span class="hljs-string">'/api/consultas'</span>, json={<span class="hljs-string">'paciente_id'</span>: <span class="hljs-number">999</span>, <span class="hljs-string">'data'</span>: <span class="hljs-string">'2026-08-13'</span>})
+    <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">400</span>
+    <span class="hljs-keyword">assert</span> <span class="hljs-string">'error'</span> <span class="hljs-keyword">in</span> res.json
+</code></pre>
+<hr>
+
+<h3 id="ct-14">CT-14 — Listagem de Usuários e Mapeamento</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-14</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.listar_todos()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Garantir que a Query agrupa e devolve instâncias/dicionários mapeados.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>2 usuários salvos.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Retorno de lista com tamanho 2.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Contagem de comprimento <code>len()</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Integração</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_14_integ_listar_usuarios</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> app.app_context():
+        Usuario(<span class="hljs-string">'A'</span>, <span class="hljs-string">'a@t.com'</span>, <span class="hljs-string">'Med'</span>, <span class="hljs-string">'1'</span>, <span class="hljs-string">'s'</span>).salvar()
+        Usuario(<span class="hljs-string">'B'</span>, <span class="hljs-string">'b@t.com'</span>, <span class="hljs-string">'Med'</span>, <span class="hljs-string">'2'</span>, <span class="hljs-string">'s'</span>).salvar()
+        usuarios = Usuario.listar_todos()
+        <span class="hljs-keyword">assert</span> <span class="hljs-built_in">len</span>(usuarios) == <span class="hljs-number">2</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-15">CT-15 — Busca de Usuário por ID</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-15</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.buscar_por_id()</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Garantir o resgate unitário de um usuário salvo.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>ID válido (1).</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Dicionário/Objeto correspondente ao ID informado.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Persistência e recuperação direta (<code>assert not None</code>).</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Integração</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_15_integ_buscar_usuario_por_id</span>():
+    <span class="hljs-keyword">with</span> app.app_context():
+        Usuario(<span class="hljs-string">'Busca'</span>, <span class="hljs-string">'busca@t.com'</span>, <span class="hljs-string">'Med'</span>, <span class="hljs-string">'CRM-99'</span>, <span class="hljs-string">'s'</span>).salvar()
+        u = Usuario.buscar_por_id(<span class="hljs-number">1</span>)
+        <span class="hljs-keyword">assert</span> u <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>
+        <span class="hljs-keyword">assert</span> u[<span class="hljs-string">'nome'</span>] == <span class="hljs-string">'Busca'</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-16">CT-16 — Login Válido e Redirecionamento</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-16</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>POST /login</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Validar se credenciais corretas efetuam login e criam a sessão.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Form-data com <code>crm_coren</code> e <code>senha</code> corretos.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Status <code>302</code>, Location <code>/dashboard</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td><code>client.post(data=...)</code></td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Funcional</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_16_func_login_valido</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> app.app_context():
+        Usuario(<span class="hljs-string">'C'</span>, <span class="hljs-string">'c@t.com'</span>, <span class="hljs-string">'Med'</span>, <span class="hljs-string">'CRM-3'</span>, <span class="hljs-string">'Aa!1'</span>).salvar()
+        
+    res = client.post(<span class="hljs-string">'/login'</span>, data={<span class="hljs-string">"crm_coren"</span>: <span class="hljs-string">"CRM-3"</span>, <span class="hljs-string">"senha"</span>: <span class="hljs-string">"Aa!1"</span>})
+    <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">302</span>
+    <span class="hljs-keyword">assert</span> <span class="hljs-string">"/dashboard"</span> <span class="hljs-keyword">in</span> res.headers[<span class="hljs-string">'Location'</span>]
+</code></pre>
+<hr>
+
+<h3 id="ct-17">CT-17 — Proteção do Dashboard sem Login</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-17</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>GET /dashboard</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Impedir acesso direto de usuários não autenticados.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Requisição GET sem contexto de sessão.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Redirecionamento para <code>/login</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Asserção de Location Header.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Funcional / Segurança</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_17_func_dashboard_protegido</span>(<span class="hljs-params">client</span>):
+    res = client.get(<span class="hljs-string">'/dashboard'</span>)
+    <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">302</span>
+    <span class="hljs-keyword">assert</span> <span class="hljs-string">"/login"</span> <span class="hljs-keyword">in</span> res.headers[<span class="hljs-string">'Location'</span>]
+</code></pre>
+<hr>
+
+<h3 id="ct-18">CT-18 — Limpeza de Sessão no Logout</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-18</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>GET /logout</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Assegurar que a rota destroi as variáveis da sessão logada.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Requisição após injeção de sessão válida.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>A chave <code>'usuario'</code> não deve mais estar em <code>session</code>.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Recuperação de <code>session</code> no contexto Flask.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Funcional</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_18_func_logout_limpa_sessao</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> client.session_transaction() <span class="hljs-keyword">as</span> sess:
+        sess[<span class="hljs-string">'usuario'</span>] = {<span class="hljs-string">'id'</span>: <span class="hljs-number">1</span>}
+    client.get(<span class="hljs-string">'/logout'</span>)
+    <span class="hljs-keyword">with</span> client.session_transaction() <span class="hljs-keyword">as</span> sess:
+        <span class="hljs-keyword">assert</span> <span class="hljs-string">'usuario'</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">in</span> sess
+</code></pre>
+<hr>
+
+<h3 id="ct-19">CT-19 — Renderização da Tela de Cadastro</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-19</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>GET /cadastro</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Validar se administradores possuem acesso à tela de criação de novos perfis.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Sessão com <code>admin='sim'</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Status HTTP <code>200</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Asserção de Status Code.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Funcional</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_19_func_acesso_tela_cadastro</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> client.session_transaction() <span class="hljs-keyword">as</span> sess:
+        sess[<span class="hljs-string">'usuario'</span>] = {<span class="hljs-string">'admin'</span>: <span class="hljs-string">'sim'</span>}
+    res = client.get(<span class="hljs-string">'/cadastro'</span>)
+    <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">200</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-20">CT-20 — Bloqueio de Acesso Privilegiado</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-20</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>GET /cadastro</code> e <code>GET /adm</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Impedir usuários com <code>admin='nao'</code> de acessar rotas gerenciais.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Sessão com <code>admin='nao'</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Redirecionamento de volta para <code>/dashboard</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Verificação múltipla de rotas.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste Funcional / Segurança</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_20_func_acesso_negado_adm</span>(<span class="hljs-params">client</span>):
+    <span class="hljs-keyword">with</span> client.session_transaction() <span class="hljs-keyword">as</span> sess:
+        sess[<span class="hljs-string">'usuario'</span>] = {<span class="hljs-string">'admin'</span>: <span class="hljs-string">'nao'</span>}
+    <span class="hljs-keyword">for</span> rota <span class="hljs-keyword">in</span> [<span class="hljs-string">'/cadastro'</span>, <span class="hljs-string">'/adm'</span>]:
+        res = client.get(rota)
+        <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">302</span>
+        <span class="hljs-keyword">assert</span> <span class="hljs-string">'/dashboard'</span> <span class="hljs-keyword">in</span> res.headers[<span class="hljs-string">'Location'</span>]
+</code></pre>
+<hr>
+
+<h3 id="ct-21">CT-21 — Segurança do Hash de Senhas</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-21</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>Usuario.salvar()</code> e Werkzeug Hashing</td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Garantir que senhas inseridas nunca são salvas em texto plano.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Senha <code>"senha_secreta"</code></td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Campo deve conter string embaralhada aprovada por <code>check_password_hash</code></td></tr>
+<tr><td><strong>Técnica</strong></td><td>Leitura limpa e verificação criptográfica.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Segurança</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_21_sec_senhas_protegidas</span>():
+    <span class="hljs-keyword">with</span> app.app_context():
+        Usuario(<span class="hljs-string">"H"</span>, <span class="hljs-string">"h@t.com"</span>, <span class="hljs-string">"Med"</span>, <span class="hljs-string">"CRM-H"</span>, <span class="hljs-string">"senha_secreta"</span>).salvar()
+        senha_db = get_db().execute(<span class="hljs-string">"SELECT senha FROM usuarios"</span>).fetchone()[<span class="hljs-number">0</span>]
+        <span class="hljs-keyword">assert</span> senha_db != <span class="hljs-string">"senha_secreta"</span>
+        <span class="hljs-keyword">assert</span> check_password_hash(senha_db, <span class="hljs-string">"senha_secreta"</span>) <span class="hljs-keyword">is</span> <span class="hljs-literal">True</span>
+</code></pre>
+<hr>
+
+<h3 id="ct-22">CT-22 — Proteção de Rota de Edição</h3>
+<table>
+<thead>
+<tr><th>Campo</th><th>Detalhe</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CT-22</td></tr>
+<tr><td><strong>Função testada</strong></td><td><code>POST /usuarios/editar/1</code></td></tr>
+<tr><td><strong>Objetivo</strong></td><td>Bloquear requisições POST para edição vindas de fora de sessões autenticadas.</td></tr>
+<tr><td><strong>Entradas</strong></td><td>Requisição POST com dados simulados mas sem cookie de sessão.</td></tr>
+<tr><td><strong>Resultado esperado</strong></td><td>Status <code>302</code> voltando para o login.</td></tr>
+<tr><td><strong>Técnica</strong></td><td>Teste de negação de rota.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>Teste de Segurança</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_22_sec_rota_edicao_usuario_bloqueada_sem_sessao</span>(<span class="hljs-params">client</span>):
+    res = client.post(<span class="hljs-string">'/usuarios/editar/1'</span>, data={<span class="hljs-string">"nome"</span>: <span class="hljs-string">"Mudou"</span>})
+    <span class="hljs-keyword">assert</span> res.status_code == <span class="hljs-number">302</span>
+    <span class="hljs-keyword">assert</span> <span class="hljs-string">"/login"</span> <span class="hljs-keyword">in</span> res.headers[<span class="hljs-string">'Location'</span>]
+</code></pre>
+<hr>
+
+<h2 id="resumo-tecnicas">Resumo das técnicas utilizadas</h2>
+<table>
+<thead>
+<tr>
+<th>Técnica</th>
+<th>Quando usar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>client.session_transaction()</code></td>
+<td>Para modificar variáveis simulando diferentes perfis logados (Ex: Admin vs Comum).</td>
+</tr>
+<tr>
+<td><code>pytest.raises(ValueError)</code></td>
+<td>Garantir que a aplicação recusa duplicatas e protege a integridade do banco.</td>
+</tr>
+<tr>
+<td><code>@patch</code> e <code>MagicMock()</code></td>
+<td>Isolar testes unitários, interceptar conexões a banco de dados e simular dados falsos de retorno sem IO.</td>
+</tr>
+<tr>
+<td><code>sqlite3.connect() / get_db()</code></td>
+<td>Validar o estado final dos dados na persistência efetuando queries diretas após requisições HTTP (Integração).</td>
+</tr>
+</tbody>
+</table>
+<hr>
+
+<h2 id="como-executar">Como executar os testes</h2>
+<p>A partir da raiz do projeto (<code>sistema-gestao-clinica/</code>):</p>
+<pre><code class="language-bash"><span class="hljs-comment"># Rodar todos os testes do projeto (ignorando warnings de depreciação)</span>
+pytest -W ignore
+
+<span class="hljs-comment"># Rodar exibindo detalhes de cada caso aprovado/falho</span>
+pytest -v
+
+<span class="hljs-comment"># Rodar os testes focados apenas nas lógicas do Usuario</span>
+pytest tests/test_usuario.py -v
+</code></pre>
+<hr>
+
+<h2 id="resultado-esperado">Resultado esperado ao rodar <code>pytest -v test_admin_and_security.py</code></h2>
+<pre><code>test_admin_and_security.py::test_01_adm_route_redirects_to_admin_panel_for_admin_user     PASSED
+test_admin_and_security.py::test_02_users_page_renders_with_sqlite_rows                   PASSED
+...
+test_admin_and_security.py::test_21_sec_senhas_protegidas                             PASSED
+test_admin_and_security.py::test_22_sec_rota_edicao_usuario_bloqueada_sem_sessao          PASSED
+
+22 passed in 2.25s
+</code></pre>
+
+</body>
+</html>

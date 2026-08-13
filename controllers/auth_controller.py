@@ -25,6 +25,17 @@ class AuthController:
             senha = request.form.get("senha", "").strip()
             admin = Usuario.normalizar_perfil(request.form.get("admin", "nao"))
 
+            if len(senha) < 8:
+                return render_template(
+                    template_name,
+                    error="A senha precisa ter pelo menos 8 caracteres",
+                    nome=nome,
+                    email=email,
+                    cargo=cargo,
+                    crm_coren=crm_coren,
+                    admin=admin,
+                )
+
             if not re.search(r"[A-Z]", senha):
                 return render_template(
                     template_name,
@@ -40,6 +51,17 @@ class AuthController:
                 return render_template(
                     template_name,
                     error="A senha precisa ter pelo menos 1 letra minúscula (a-z)",
+                    nome=nome,
+                    email=email,
+                    cargo=cargo,
+                    crm_coren=crm_coren,
+                    admin=admin,
+                )
+
+            if not re.search(r"\d", senha):
+                return render_template(
+                    template_name,
+                    error="A senha precisa ter pelo menos 1 número (0-9)",
                     nome=nome,
                     email=email,
                     cargo=cargo,

@@ -481,3 +481,11 @@ table td .btn-excluir:hover {
     box-shadow: 0 4px 12px rgba(217, 83, 79, 0.3);
     color: #ffffff !important;
 }
+
+.logo-flutuante {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  height: 180px;
+  z-index: 999;
+}

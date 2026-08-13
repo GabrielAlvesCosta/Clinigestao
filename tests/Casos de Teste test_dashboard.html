@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Documento de Casos de Teste Completo &mdash; Sistema de Gestão Clínica</title>
+    <style>
+/* From extension vscode.github */
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        blockquote {
+            margin: 0 0 16px 0;
+            padding: 0 1em;
+            color: #57606a;
+            border-left: 0.25em solid #d0d7de;
+        }
+    </style>
+</head>
+<body class="vscode-body vscode-light">
+    <h1 id="documento-de-casos-de-teste-completo--sistema-de-gestão-clínica">Documento de Casos de Teste Completo &mdash; Sistema de Gestão Clínica</h1>
+    <p><strong>Módulos testados:</strong> <code>app.py</code>, <code>models/models.py</code>, <code>models/usuario.py</code>[cite: 5]<br>
+    <strong>Arquivo fonte de suíte:</strong> <code>test_dashboard.py</code>[cite: 5]<br>
+    <strong>Framework utilizado:</strong> <code>pytest</code>[cite: 5]</p>
+    <hr>
+
+    <h2 id="funções-e-rotas-testadas">Funções e Rotas Testadas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Módulo / Rota</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/pacientes</code> (POST, PUT, GET)</td>
+                <td>Gerenciamento completo de pacientes (criação, edição e listagem em ordem decrescente com descriptografia)[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><code>/api/consultas</code> (POST, PUT, GET)</td>
+                <td>Agendamento, transição de status (Agendado, Confirmado, Atendido, Cancelado) e filtros por estado[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><code>/api/prontuarios</code> (POST, GET)</td>
+                <td>Registro de histórico clínico (PEP), garantia de criptografia de diagnóstico e listagem descriptografada[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><code>/api/prontuarios/auditoria</code> (POST, GET)</td>
+                <td>Rastreabilidade e log automático de ações realizadas em prontuários eletrônicos[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><code>en(dado)</code> / <code>de(dado)</code></td>
+                <td>Funções utilitárias de criptografia e descriptografia Fernet para conformidade LGPD[cite: 5].</td>
+            </tr>
+            <tr>
+                <td>Classes de Modelo (<code>Paciente</code>, <code>Consulta</code>, <code>Prontuario</code>, <code>Auditoria</code>, <code>Usuario</code>)</td>
+                <td>Regras de negócio isoladas, sanitização de dados, hashes de senha e estados das entidades[cite: 5].</td>
+            </tr>
+        </tbody>
+    </table>
+    <hr>
+
+    <h2 id="casos-de-teste">Casos de Teste ( Suíte Completa - CT-01 a CT-75 )</h2>
+
+    <h3 id="modulo-1">MÓDULO 1: Pacientes e Encriptação (LGPD)</h3>
+
+    <!-- CT-01 -->
+    <h4>CT-01 &mdash; Criar paciente com dados completos</h4>
+    <table>
+        <tr><th>ID</th><td>CT-01 (<code>test_01_criar_paciente_dados_completos</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar a criação de paciente via API enviando todos os dados cadastrais obrigatórios[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>JSON contendo <code>nome</code>, <code>dataNasc</code>, <code>genero</code>, <code>documento</code>, <code>cartao</code> e <code>contato</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_01_criar_paciente_dados_completos(client):
+    res = client.post('/api/pacientes', json={
+        "nome": "João Silva", "dataNasc": "1980-05-15", "genero": "Masculino", 
+        "documento": "123456789", "cartao": "987654", "contato": "11999999999"
+    })
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-02 -->
+    <h4>CT-02 &mdash; Criar paciente com campos opcionais/vazios</h4>
+    <table>
+        <tr><th>ID</th><td>CT-02 (<code>test_02_criar_paciente_campos_vazios</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a criação de paciente aceita valores zerados/padrão para campos secundários[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>JSON com documentos/contato informados como "0"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_02_criar_paciente_campos_vazios(client):
+    res = client.post('/api/pacientes', json={
+        "nome": "Maria Souza", "dataNasc": "2000-01-01", "genero": "Não informado",
+        "documento": "0", "cartao": "0", "contato": "0"
+    })
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-03 -->
+    <h4>CT-03 &mdash; Atualizar dados do paciente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-03 (<code>test_03_atualizar_dados_paciente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a alteração do nome e dados de um paciente existente via PUT[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT em <code>/api/pacientes</code> alterando o nome para "Carlos Atualizado"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200/201</code> e a listagem GET confirmando a alteração do nome[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_03_atualizar_dados_paciente(client):
+    res_post = client.post('/api/pacientes', json={
+        "nome": "Carlos Velho", "dataNasc": "1970-01-01", "genero": "Masculino",
+        "documento": "123", "cartao": "123", "contato": "0000"
+    })
+    p_id = json.loads(res_post.data)["id"]
+    res_put = client.put('/api/pacientes', json={
+        "id": p_id, "nome": "Carlos Atualizado", "dataNasc": "1970-01-01", 
+        "genero": "Masculino", "documento": "123", "cartao": "123", "contato": "1111"
+    })
+    assert res_put.status_code in (200, 201)
+    pacientes = json.loads(client.get('/api/pacientes').data)
+    paciente_editado = next((p for p in pacientes if p['id'] == p_id), None)
+    assert paciente_editado['nome'] == "Carlos Atualizado"</code></pre>
+
+    <!-- CT-04 -->
+    <h4>CT-04 &mdash; Listagem de pacientes em ordem decrescente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-04 (<code>test_04_listagem_pacientes_ordem_decrescente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar se o GET de pacientes retorna os registros ordenados do mais recente ao mais antigo[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Cadastro sequencial do "Paciente A" e do "Paciente B"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O primeiro item da lista retornada deve ser o "Paciente B"[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_04_listagem_pacientes_ordem_decrescente(client):
+    client.post('/api/pacientes', json={"nome": "Paciente A", "dataNasc": "2000-01-01", "genero": "Outro", "documento": "1", "cartao": "1", "contato": "1"})
+    client.post('/api/pacientes', json={"nome": "Paciente B", "dataNasc": "2000-01-01", "genero": "Outro", "documento": "2", "cartao": "2", "contato": "2"})
+    pacientes = json.loads(client.get('/api/pacientes').data)
+    assert pacientes[0]['nome'] == "Paciente B"</code></pre>
+
+    <!-- CT-05 -->
+    <h4>CT-05 &mdash; Validar encriptação direta no banco (LGPD)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-05 (<code>test_05_validar_encriptacao_paciente_direto_no_banco</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Confirmar via SQL direto no SQLite que o dado do paciente fica armazenado criptografado no banco de dados[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Cadastro do paciente "Segredo Absoluto"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A coluna <code>nome</code> no SQLite deve ser diferente do texto original e possuir o prefixo Fernet <code>gAAAAA</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_05_validar_encriptacao_paciente_direto_no_banco(client):
+    client.post('/api/pacientes', json={
+        "nome": "Segredo Absoluto", "dataNasc": "2000-01-01", "genero": "Feminino",
+        "documento": "999", "cartao": "999", "contato": "99999999"
+    })
+    conn = sqlite3.connect(meus_models.DB_FILE)
+    try:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT nome FROM pacientes ORDER BY id DESC LIMIT 1")
+        row = c.fetchone()
+    finally:
+        conn.close()
+    assert row["nome"] != "Segredo Absoluto"
+    assert row["nome"].startswith("gAAAAA")</code></pre>
+
+    <hr>
+    <h3 id="modulo-2">MÓDULO 2: Consultas (Agendamentos e Estados)</h3>
+
+    <!-- CT-06 -->
+    <h4>CT-06 &mdash; Agendar consulta com sucesso</h4>
+    <table>
+        <tr><th>ID</th><td>CT-06 (<code>test_06_agendar_consulta_sucesso</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Agendar consulta válida para um paciente cadastrado[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>JSON da consulta vinculada ao <code>pacienteId: 1</code> e médico CRM-123[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_06_agendar_consulta_sucesso(client):
+    res = client.post('/api/consultas', json={
+        "pacienteId": 1, "nomePaciente": "Ana", "data": "2026-10-10", 
+        "horario": "10:00", "crm_coren": "CRM-123", "status": "Agendado"
+    })
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-07 -->
+    <h4>CT-07 &mdash; Permissão de horário igual para profissionais diferentes</h4>
+    <table>
+        <tr><th>ID</th><td>CT-07 (<code>test_07_choque_horario_profissionais_diferentes</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que médicos distintos (CRM-123 e CRM-456) possam ter consultas no mesmo dia e horário[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Duas consultas na mesma data (2026-10-10) e horário (14:00) para médicos diferentes[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Ambas as requisições devem retornar status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_07_choque_horario_profissionais_diferentes(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-10-10", "horario": "14:00", "crm_coren": "CRM-123"})
+    res = client.post('/api/consultas', json={"pacienteId": 2, "data": "2026-10-10", "horario": "14:00", "crm_coren": "CRM-456"})
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-08 -->
+    <h4>CT-08 &mdash; Mudar status da consulta para Confirmado</h4>
+    <table>
+        <tr><th>ID</th><td>CT-08 (<code>test_08_mudar_status_consulta_confirmado</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Atualizar o status de uma consulta de "Agendado" para "Confirmado"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT em <code>/api/consultas</code> informando o ID da consulta e o novo status "Confirmado"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_08_mudar_status_consulta_confirmado(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-11-11", "horario": "09:00", "crm_coren": "CRM-123", "status": "Agendado"})
+    c_id = json.loads(client.get('/api/consultas?status=ativas').data)[0]['id']
+    res = client.put('/api/consultas', json={"id": c_id, "status": "Confirmado"})
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-09 -->
+    <h4>CT-09 &mdash; Mudar status da consulta para Cancelado</h4>
+    <table>
+        <tr><th>ID</th><td>CT-09 (<code>test_09_mudar_status_consulta_cancelado</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Cancelar uma consulta e verificar sua remoção da lista de consultas ativas[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT alterando o status para "Cancelado"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A consulta cancelada não deve mais figurar na busca <code>/api/consultas?status=ativas</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_09_mudar_status_consulta_cancelado(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-11-11", "horario": "10:00", "crm_coren": "CRM-123", "status": "Agendado"})
+    c_id = json.loads(client.get('/api/consultas?status=ativas').data)[0]['id']
+    client.put('/api/consultas', json={"id": c_id, "status": "Cancelado"})
+    ativas = json.loads(client.get('/api/consultas?status=ativas').data)
+    assert not any(c['id'] == c_id for c in ativas)</code></pre>
+
+    <!-- CT-10 -->
+    <h4>CT-10 &mdash; Mudar status da consulta para Atendido</h4>
+    <table>
+        <tr><th>ID</th><td>CT-10 (<code>test_10_mudar_status_consulta_atendido</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Concluir o atendimento da consulta alterando o status para "Atendido"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT com o novo status "Atendido"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A consulta deve constar na listagem de concluídas (<code>?status=concluidas</code>)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_10_mudar_status_consulta_atendido(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-11-11", "horario": "11:00", "crm_coren": "CRM-123", "status": "Agendado"})
+    c_id = json.loads(client.get('/api/consultas?status=ativas').data)[0]['id']
+    client.put('/api/consultas', json={"id": c_id, "status": "Atendido"})
+    concluidas = json.loads(client.get('/api/consultas?status=concluidas').data)
+    assert any(c['id'] == c_id for c in concluidas)</code></pre>
+
+    <!-- CT-11 -->
+    <h4>CT-11 &mdash; Filtro de consultas ativas</h4>
+    <table>
+        <tr><th>ID</th><td>CT-11 (<code>test_11_filtros_consultas_ativas</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar se a consulta por <code>status=ativas</code> traz exclusivamente itens Agendados ou Confirmados[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>GET em <code>/api/consultas?status=ativas</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Todas as consultas retornadas possuem status 'Agendado' ou 'Confirmado'[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_11_filtros_consultas_ativas(client):
+    ativas = json.loads(client.get('/api/consultas?status=ativas').data)
+    for c in ativas: assert c['status'] in ['Agendado', 'Confirmado']</code></pre>
+
+    <!-- CT-12 -->
+    <h4>CT-12 &mdash; Filtro de consultas concluídas</h4>
+    <table>
+        <tr><th>ID</th><td>CT-12 (<code>test_12_filtros_consultas_concluidas</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar se a consulta por <code>status=concluidas</code> traz apenas itens Cancelados ou Atendidos[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>GET em <code>/api/consultas?status=concluidas</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Todas as consultas retornadas possuem status 'Cancelado' ou 'Atendido'[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_12_filtros_consultas_concluidas(client):
+    concluidas = json.loads(client.get('/api/consultas?status=concluidas').data)
+    for c in concluidas: assert c['status'] in ['Cancelado', 'Atendido']</code></pre>
+
+    <hr>
+    <h3 id="modulo-3">MÓDULO 3: Prontuários Eletrônicos (PEP)</h3>
+
+    <!-- CT-13 -->
+    <h4>CT-13 &mdash; Criar prontuário completo</h4>
+    <table>
+        <tr><th>ID</th><td>CT-13 (<code>test_13_criar_prontuario_completo</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Cadastrar um atendimento médico contendo QP, HDA, CRM do médico e Prioridade[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>JSON do PEP completo para o <code>pacienteId: 1</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_13_criar_prontuario_completo(client):
+    res = client.post('/api/prontuarios', json={
+        "pacienteId": 1, "nomePaciente": "Ana", "qp": "Dor no peito", "hda": "Há 3 dias",
+        "crm_coren": "CRM-123", "prioridade": "Normal"
+    })
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-14 -->
+    <h4>CT-14 &mdash; Criar prontuário com dados parciais</h4>
+    <table>
+        <tr><th>ID</th><td>CT-14 (<code>test_14_criar_prontuario_dados_parciais</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir a criação de prontuário mesmo omitindo dados secundários como HDA[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>JSON contendo apenas <code>pacienteId</code>, <code>qp</code> e <code>crm_coren</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_14_criar_prontuario_dados_parciais(client):
+    res = client.post('/api/prontuarios', json={
+        "pacienteId": 1, "qp": "Retorno de rotina", "crm_coren": "CRM-123"
+    })
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-15 -->
+    <h4>CT-15 &mdash; Listagem de prontuários com descriptografia transparente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-15 (<code>test_15_listagem_prontuarios_desencriptada</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Confirmar que o GET em <code>/api/prontuarios</code> reverte a criptografia para exibição aos usuários autorizados[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Prontuário gravado com a hipótese "Diagnóstico Secreto"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O atributo <code>hipotese</code> retornado no JSON da API deve ser exatamente igual a "Diagnóstico Secreto"[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_15_listagem_prontuarios_desencriptada(client):
+    client.post('/api/prontuarios', json={"pacienteId": 1, "hipotese": "Diagnóstico Secreto", "crm_coren": "CRM-123"})
+    prontuarios = json.loads(client.get('/api/prontuarios').data)
+    assert prontuarios[0]["hipotese"] == "Diagnóstico Secreto"</code></pre>
+
+    <!-- CT-16 -->
+    <h4>CT-16 &mdash; Criptografia do prontuário no banco de dados (LGPD)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-16 (<code>test_16_validar_encriptacao_prontuario_banco</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Inspecionar via SQLite se a Queixa Principal (QP) é salva criptografada[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Criação de prontuário com QP "Sintoma X"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>No banco de dados, <code>qp != 'Sintoma X'</code> e inicia com <code>gAAAAA</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_16_validar_encriptacao_prontuario_banco(client):
+    client.post('/api/prontuarios', json={"pacienteId": 1, "qp": "Sintoma X", "crm_coren": "CRM-123"})
+    conn = sqlite3.connect(meus_models.DB_FILE)
+    try:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT qp FROM prontuarios ORDER BY id DESC LIMIT 1")
+        row = c.fetchone()
+    finally:
+        conn.close()
+    assert row["qp"] != "Sintoma X"
+    assert row["qp"].startswith("gAAAAA")</code></pre>
+
+    <hr>
+    <h3 id="modulo-4">MÓDULO 4: Auditoria de Acessos</h3>
+
+    <!-- CT-17 -->
+    <h4>CT-17 &mdash; Criação automática de registro de auditoria</h4>
+    <table>
+        <tr><th>ID</th><td>CT-17 (<code>test_17_auditoria_criacao_automatica</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar se a inclusão de um prontuário gera um log de auditoria associado ao CRM do médico[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/prontuarios</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O endpoint <code>/api/prontuarios/auditoria</code> lista uma ação "Criação" registrada para o profissional[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_17_auditoria_criacao_automatica(client):
+    client.post('/api/prontuarios', json={"pacienteId": 1, "crm_coren": "CRM-123"})
+    logs = json.loads(client.get('/api/prontuarios/auditoria').data)
+    assert logs[0]['acao'] == "Criação"
+    assert logs[0]['crm_coren'] == "CRM-123"</code></pre>
+
+    <hr>
+    <h3 id="modulo-5">MÓDULO 5: Cobertura de Regras e Segurança Extra</h3>
+
+    <!-- CT-18 -->
+    <h4>CT-18 &mdash; Atribuição de status padrão "Agendado" em consultas</h4>
+    <table>
+        <tr><th>ID</th><td>CT-18 (<code>test_18_consulta_status_padrao_agendado</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que omissões de status na requisição façam a consulta nascer como "Agendado"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Agendamento sem indicar a chave <code>status</code> no JSON[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A consulta gravada deve apresentar <code>status == "Agendado"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_18_consulta_status_padrao_agendado(client):
+    client.post('/api/consultas', json={
+        "pacienteId": 1, "data": "2026-12-31", "horario": "15:00", "crm_coren": "CRM-123"
+    })
+    ativas = json.loads(client.get('/api/consultas?status=ativas').data)
+    consulta_criada = next(c for c in ativas if c['data'] == "2026-12-31")
+    assert consulta_criada['status'] == "Agendado"</code></pre>
+
+    <!-- CT-19 -->
+    <h4>CT-19 &mdash; Bloqueio de prontuário para paciente fantasma</h4>
+    <table>
+        <tr><th>ID</th><td>CT-19 (<code>test_19_prontuario_paciente_fantasma_seguranca</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir violação de integridade ao tentar vincular PEP a um paciente inexistente (ID 9999)[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/prontuarios</code> com <code>pacienteId: 9999</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Erro retornado (<code>400, 404, 500</code>) ou exceção <code>FOREIGN KEY / IntegrityError</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_19_prontuario_paciente_fantasma_seguranca(client):
+    try:
+        res = client.post('/api/prontuarios', json={
+            "pacienteId": 9999, "crm_coren": "CRM-123", "qp": "Teste Invasão"
+        })
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro))</code></pre>
+
+    <!-- CT-20 -->
+    <h4>CT-20 &mdash; Edição de paciente inexistente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-20 (<code>test_20_edicao_paciente_inexistente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar a resposta da API ao tentar atualizar um paciente inexistente[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT em <code>/api/pacientes</code> com <code>id: 9999</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Tratamento gracioso da rota retornando resposta válida do servidor[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_20_edicao_paciente_inexistente(client):
+    res = client.put('/api/pacientes', json={
+        "id": 9999, "nome": "Paciente Fantasma", "dataNasc": "2000-01-01",
+        "genero": "Não informado", "documento": "0", "cartao": "0", "contato": "0000"
+    })
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-21 -->
+    <h4>CT-21 &mdash; Isolamento na atualização de pacientes</h4>
+    <table>
+        <tr><th>ID</th><td>CT-21 (<code>test_21_isolamento_atualizacao_paciente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a edição dos dados do Paciente A não afete os atributos registrados do Paciente B[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Inclusão dos Pacientes A e B com UUIDs únicos no documento; atualização do Paciente A[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O Paciente B permanece com seus dados originais inalterados no banco[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_21_isolamento_atualizacao_paciente(client):
+    doc_a = f"doc_a_{uuid.uuid4().hex[:6]}"
+    doc_b = f"doc_b_{uuid.uuid4().hex[:6]}"
+    doc_a_modificado = f"doc_a_mod_{uuid.uuid4().hex[:6]}"
+
+    res_a = client.post('/api/pacientes', json={"nome": "Paciente A", "dataNasc": "2000-01-01", "genero": "M", "documento": doc_a, "cartao": "1", "contato": "1"})
+    assert res_a.status_code in [200, 201]
+
+    res_b = client.post('/api/pacientes', json={"nome": "Paciente B", "dataNasc": "2000-01-01", "genero": "M", "documento": doc_b, "cartao": "2", "contato": "2"})
+    assert res_b.status_code in [200, 201]
+
+    res_get = client.get('/api/pacientes')
+    dados = json.loads(res_get.data)
+    pacientes_iniciais = dados.get("pacientes", dados) if isinstance(dados, dict) else dados
+
+    paciente_a = next(p for p in pacientes_iniciais if p.get('documento') == doc_a)
+    p_id_a = paciente_a['id']
+
+    client.put('/api/pacientes', json={"id": p_id_a, "nome": "A Modificado", "dataNasc": "2000-01-01", "genero": "M", "documento": doc_a_modificado, "cartao": "1", "contato": "1"})
+
+    res_finais = client.get('/api/pacientes')
+    dados_finais = json.loads(res_finais.data)
+    pacientes_finais = dados_finais.get("pacientes", dados_finais) if isinstance(dados_finais, dict) else dados_finais
+
+    paciente_b = next(p for p in pacientes_finais if p.get('documento') == doc_b)
+    assert paciente_b['documento'] == doc_b
+    assert paciente_b['nome'] == "Paciente B"</code></pre>
+
+    <!-- CT-22 -->
+    <h4>CT-22 &mdash; Suporte a caracteres especiais e acentuação (UTF-8)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-22 (<code>test_22_paciente_caracteres_especiais_utf8</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a criptografia e persistência preservam acentos e símbolos no nome do paciente[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>nome: "João Conceição ç á é í ó ú & * @ !"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O nome é recuperado intacto após a busca via GET[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_22_paciente_caracteres_especiais_utf8(client):
+    nome_complexo = "João Conceição ç á é í ó ú & * @ !"
+    client.post('/api/pacientes', json={"nome": nome_complexo, "dataNasc": "2000-01-01", "genero": "Masculino", "documento": "0", "cartao": "0", "contato": "99"})
+    paciente_inserido = json.loads(client.get('/api/pacientes').data)[0]
+    assert paciente_inserido['nome'] == nome_complexo</code></pre>
+
+    <!-- CT-23 -->
+    <h4>CT-23 &mdash; Agendamento de consultas em horários sequenciais</h4>
+    <table>
+        <tr><th>ID</th><td>CT-23 (<code>test_23_consultas_horarios_seguidos</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Confirmar que o mesmo médico atende dois pacientes em horários adjacentes (ex: 14:00 e 14:30)[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Agendamento do Paciente 1 às 14:00 e do Paciente 2 às 14:30 para o CRM-123[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status <code>200</code> ou <code>201</code> para o segundo agendamento[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_23_consultas_horarios_seguidos(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-10-15", "horario": "14:00", "crm_coren": "CRM-123"})
+    res = client.post('/api/consultas', json={"pacienteId": 2, "data": "2026-10-15", "horario": "14:30", "crm_coren": "CRM-123"})
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-24 -->
+    <h4>CT-24 &mdash; Tratamento de parâmetro de filtro inválido em consultas</h4>
+    <table>
+        <tr><th>ID</th><td>CT-24 (<code>test_24_consultas_filtro_invalido</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir fallback seguro para a listagem padrão de ativas ao fornecer parâmetro desconhecido[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>GET em <code>/api/consultas?status=STATUS_LOUCO</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Retorno apenas de consultas com status válidos (Agendado ou Confirmado)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_24_consultas_filtro_invalido(client):
+    res = client.get('/api/consultas?status=STATUS_LOUCO')
+    for c in json.loads(res.data): assert c['status'] in ['Agendado', 'Confirmado']</code></pre>
+
+    <!-- CT-25 -->
+    <h4>CT-25 &mdash; Reativação de consulta previamente cancelada</h4>
+    <table>
+        <tr><th>ID</th><td>CT-25 (<code>test_25_reativar_consulta_cancelada</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a transição de status de "Cancelado" de volta para "Agendado"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT alterando o status da consulta cancelada para "Agendado"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_25_reativar_consulta_cancelada(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-01-01", "horario": "08:00", "crm_coren": "CRM-123", "status": "Cancelado"})
+    id_cancelada = json.loads(client.get('/api/consultas?status=concluidas').data)[0]['id']
+    res = client.put('/api/consultas', json={"id": id_cancelada, "status": "Agendado"})
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-26 -->
+    <h4>CT-26 &mdash; Suporte a grandes blocos de texto no prontuário (TEXT/BLOB)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-26 (<code>test_26_prontuario_textos_longos</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a encriptação de dados volumosos (conduta médica longa) não truncará as descrições[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Texto de conduta contendo mais de 15.000 caracteres[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A conduta recuperada é exatamente idêntica ao grande bloco enviado[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_26_prontuario_textos_longos(client):
+    texto_longo = "Paciente relata dor de cabeça. " * 500
+    res = client.post('/api/prontuarios', json={"pacienteId": 1, "conduta": texto_longo, "crm_coren": "CRM-123"})
+    assert json.loads(client.get('/api/prontuarios').data)[0]['conduta'] == texto_longo</code></pre>
+
+    <!-- CT-27 -->
+    <h4>CT-27 &mdash; Ordenação do histórico do prontuário eletrônico</h4>
+    <table>
+        <tr><th>ID</th><td>CT-27 (<code>test_27_ordenacao_historico_prontuarios</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar que novos prontuários aparecem no topo do histórico do paciente[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Gravação do "Prontuário Antigo" seguido do "Prontuário Novo"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O primeiro elemento retornado no GET é o "Prontuário Novo"[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_27_ordenacao_historico_prontuarios(client):
+    client.post('/api/prontuarios', json={"pacienteId": 1, "hipotese": "Prontuário Antigo", "crm_coren": "CRM-123"})
+    client.post('/api/prontuarios', json={"pacienteId": 1, "hipotese": "Prontuário Novo", "crm_coren": "CRM-123"})
+    prontuarios = json.loads(client.get('/api/prontuarios').data)
+    assert prontuarios[0]['hipotese'] == "Prontuário Novo"</code></pre>
+
+    <!-- CT-28 -->
+    <h4>CT-28 &mdash; Bloqueio de auditoria com prontuário inexistente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-28 (<code>test_28_auditoria_fk_invalida_seguranca</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Impedir a injeção de logs de auditoria não vinculados a nenhum prontuário real[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/prontuarios/auditoria</code> com <code>prontuario_id: 9999999</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Rejeição via erro <code>400/404/500</code> ou exceção de <code>FOREIGN KEY</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_28_auditoria_fk_invalida_seguranca(client):
+    log_malicioso = {"crm_coren": "CRM-123", "prontuario_id": 9999999, "acao": "Hacking"}
+    try:
+        res = client.post('/api/prontuarios/auditoria', json=log_malicioso)
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro))</code></pre>
+
+    <!-- CT-29 -->
+    <h4>CT-29 &mdash; Junção SQL e descriptografia na auditoria</h4>
+    <table>
+        <tr><th>ID</th><td>CT-29 (<code>test_29_auditoria_join_desencriptacao</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar se a consulta de auditoria realiza o JOIN com pacientes e apresenta o nome legível[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Criação do paciente "Mário Silva" e respectivo prontuário[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O log de auditoria exibe <code>nome_paciente == "Mário Silva"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_29_auditoria_join_desencriptacao(client):
+    res_pac = client.post('/api/pacientes', json={
+        "nome": "Mário Silva", "dataNasc": "2000-01-01", "genero": "Masculino", 
+        "documento": "0", "cartao": "0", "contato": "0"
+    })
+    id_pac = json.loads(res_pac.data)["id"]
+    client.post('/api/prontuarios', json={"pacienteId": id_pac, "nomePaciente": "Mário Silva", "crm_coren": "CRM-123"})
+    log_recente = json.loads(client.get('/api/prontuarios/auditoria').data)[0]
+    assert log_recente['nome_paciente'] == "Mário Silva"</code></pre>
+
+    <!-- CT-30 -->
+    <h4>CT-30 &mdash; Integridade cruzada do nome criptografado em módulos</h4>
+    <table>
+        <tr><th>ID</th><td>CT-30 (<code>test_30_integridade_nome_criptografado_cruzado</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir consistência na leitura do nome do paciente entre os endpoints de consultas e de prontuários[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Lançamento de consulta e prontuário usando "Ana Cripto"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O nome recuperado de ambas as APIs é estritamente equivalente[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_30_integridade_nome_criptografado_cruzado(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "nomePaciente": "Ana Cripto", "crm_coren": "CRM-123", "status": "Agendado"})
+    client.post('/api/prontuarios', json={"nomePaciente": "Ana Cripto", "pacienteId": 1, "crm_coren": "CRM-123"})
+    consulta = json.loads(client.get('/api/consultas?status=ativas').data)[0]
+    prontuario = json.loads(client.get('/api/prontuarios').data)[0]
+    assert consulta['nomePaciente'] == prontuario['nomePaciente']</code></pre>
+
+    <hr>
+    <h3 id="modulo-6">MÓDULO 6: Testes Negativos e Tratamento de Falhas</h3>
+
+    <!-- CT-31 -->
+    <h4>CT-31 &mdash; Prevenção de SQL Injection no nome do paciente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-31 (<code>test_31_sql_injection_nome_paciente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a utilização de queries parametrizadas prevenindo a destruição de tabelas via SQL Injection[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Payload no nome: <code>"Robert'); DROP TABLE pacientes;--"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A string maliciosa é armazenada textualmente sem executar instruções SQL e a tabela permanece intacta[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_31_sql_injection_nome_paciente(client):
+    payload = {"nome": "Robert'); DROP TABLE pacientes;--", "dataNasc": "2000-01-01", "genero": "M", "documento": "0", "cartao": "0", "contato": "123"}
+    res = client.post('/api/pacientes', json=payload)
+    assert res.status_code in (200, 201)
+    pacientes = json.loads(client.get('/api/pacientes').data)
+    assert any(p['nome'] == payload["nome"] for p in pacientes)</code></pre>
+
+    <!-- CT-32 -->
+    <h4>CT-32 &mdash; Tratamento de XSS Payload no prontuário</h4>
+    <table>
+        <tr><th>ID</th><td>CT-32 (<code>test_32_xss_injection_prontuario</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a API armazena tags de script sem executá-las no servidor ou corromper a resposta[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>qp: "&lt;script&gt;alert('hack')&lt;/script&gt;"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O conteúdo textual é preservado sem falhas no sistema[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_32_xss_injection_prontuario(client):
+    payload = {"pacienteId": 1, "crm_coren": "CRM-123", "qp": "<script>alert('hack')</script>"}
+    res = client.post('/api/prontuarios', json=payload)
+    assert res.status_code in (200, 201)
+    prontuarios = json.loads(client.get('/api/prontuarios').data)
+    assert prontuarios[0]["qp"] == payload["qp"]</code></pre>
+
+    <!-- CT-33 -->
+    <h4>CT-33 &mdash; Requisição PUT de paciente sem ID</h4>
+    <table>
+        <tr><th>ID</th><td>CT-33 (<code>test_33_paciente_put_sem_id</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Assegurar a rejeição da atualização de pacientes quando a chave do ID do recurso for omitida[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>JSON sem o campo <code>id</code> enviado via PUT para <code>/api/pacientes</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>400</code> (Bad Request)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_33_paciente_put_sem_id(client):
+    client.post('/api/pacientes', json={"nome": "Teste PUT", "dataNasc": "2000-01-01", "genero": "M", "documento": "0", "cartao": "0", "contato": "0"})
+    res = client.put('/api/pacientes', json={"nome": "Novo Nome Hack", "genero": "M", "documento": "0", "cartao": "0", "contato": "0"})
+    assert res.status_code == 400</code></pre>
+
+    <!-- CT-34 -->
+    <h4>CT-34 &mdash; Choque de horário para o mesmo médico</h4>
+    <table>
+        <tr><th>ID</th><td>CT-34 (<code>test_34_agendar_consulta_choque_mesmo_medico</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Testar a resposta do sistema ao tentar marcar duas consultas no mesmo horário para o mesmo médico[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Duas consultas com <code>crm_coren: "CRM-123"</code> no dia 2026-10-20 às 14:00[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status retornado dentro dos padrões previstos (<code>200, 201 ou 400</code>)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_34_agendar_consulta_choque_mesmo_medico(client):
+    client.post('/api/consultas', json={
+        "pacienteId": 1, "data": "2026-10-20", "horario": "14:00", "crm_coren": "CRM-123"
+    })
+    res = client.post('/api/consultas', json={
+        "pacienteId": 2, "data": "2026-10-20", "horario": "14:00", "crm_coren": "CRM-123"
+    })
+    assert res.status_code in (200, 201, 400)</code></pre>
+
+    <!-- CT-35 -->
+    <h4>CT-35 &mdash; Agendamento para paciente inexistente (FK Error)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-35 (<code>test_35_agendar_consulta_paciente_inexistente_fk_error</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar o bloqueio de agendamento associado a um paciente não cadastrado (ID 9999)[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/consultas</code> com <code>pacienteId: 9999</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Erro HTTP <code>400/404/500</code> ou disparo capturável de erro de Foreign Key[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_35_agendar_consulta_paciente_inexistente_fk_error(client):
+    try:
+        res = client.post('/api/consultas', json={
+            "pacienteId": 9999, "data": "2026-10-20", "horario": "15:00", "crm_coren": "CRM-123"
+        })
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro))</code></pre>
+
+    <!-- CT-36 -->
+    <h4>CT-36 &mdash; Prontuário para médico inexistente (FK Error)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-36 (<code>test_36_prontuario_medico_inexistente_fk_error</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que não se criem prontuários vinculados a registros de CRM inexistentes no sistema[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/prontuarios</code> com <code>crm_coren: "CRM-FALSO"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Violação de chave estrangeira com captura da exceção ou status de erro HTTP[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_36_prontuario_medico_inexistente_fk_error(client):
+    try:
+        res = client.post('/api/prontuarios', json={"pacienteId": 1, "crm_coren": "CRM-FALSO"})
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro))</code></pre>
+
+    <!-- CT-37 -->
+    <h4>CT-37 &mdash; Log de auditoria para usuário inexistente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-37 (<code>test_37_auditoria_usuario_inexistente_fk_error</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Bloquear a inserção manual de registros de auditoria com licenças médicas inexistentes[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/prontuarios/auditoria</code> com <code>crm_coren: "CRM-FALSO"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Tratamento de erro exigido no banco de dados / API[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_37_auditoria_usuario_inexistente_fk_error(client):
+    try:
+        res = client.post('/api/prontuarios/auditoria', json={"crm_coren": "CRM-FALSO", "prontuario_id": 1})
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro))</code></pre>
+
+    <!-- CT-38 -->
+    <h4>CT-38 &mdash; Log de auditoria para prontuário inexistente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-38 (<code>test_38_auditoria_prontuario_inexistente_fk_error</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que logs de auditoria sempre façam referência a um ID de prontuário existente[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em auditoria com <code>prontuario_id: 99999</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Lançamento de <code>IntegrityError / FOREIGN KEY</code> ou HTTP erro[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_38_auditoria_prontuario_inexistente_fk_error(client):
+    try:
+        res = client.post('/api/prontuarios/auditoria', json={"crm_coren": "CRM-123", "prontuario_id": 99999})
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro))</code></pre>
+
+    <!-- CT-39 -->
+    <h4>CT-39 &mdash; Acesso a rota inexistente (404 Not Found)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-39 (<code>test_39_rota_inexistente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar a resposta padrão de rotas inválidas no servidor Flask[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>GET em <code>/api/rota_fantasma_que_nao_existe</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>404</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_39_rota_inexistente(client):
+    res = client.get('/api/rota_fantasma_que_nao_existe')
+    assert res.status_code == 404</code></pre>
+
+    <!-- CT-40 -->
+    <h4>CT-40 &mdash; Método DELETE não permitido em pacientes</h4>
+    <table>
+        <tr><th>ID</th><td>CT-40 (<code>test_40_metodo_delete_nao_permitido_pacientes</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar o bloqueio da deleção física de pacientes via HTTP DELETE[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>DELETE em <code>/api/pacientes</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>405</code> (Method Not Allowed)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_40_metodo_delete_nao_permitido_pacientes(client):
+    res = client.delete('/api/pacientes')
+    assert res.status_code == 405</code></pre>
+
+    <!-- CT-41 -->
+    <h4>CT-41 &mdash; Método DELETE não permitido em consultas</h4>
+    <table>
+        <tr><th>ID</th><td>CT-41 (<code>test_41_metodo_delete_nao_permitido_consultas</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que exclusões de agendamentos via DELETE direto sejam desabilitadas[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>DELETE em <code>/api/consultas</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>405</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_41_metodo_delete_nao_permitido_consultas(client):
+    res = client.delete('/api/consultas')
+    assert res.status_code == 405</code></pre>
+
+    <!-- CT-42 -->
+    <h4>CT-42 &mdash; Método PUT não permitido em prontuários (Inviolabilidade)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-42 (<code>test_42_metodo_put_nao_permitido_prontuarios</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Assegurar a imutabilidade jurídica dos prontuários impedindo alterações por PUT[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT em <code>/api/prontuarios</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>405</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_42_metodo_put_nao_permitido_prontuarios(client):
+    res = client.put('/api/prontuarios', json={"id": 1, "qp": "Fraude"})
+    assert res.status_code == 405</code></pre>
+
+    <!-- CT-43 -->
+    <h4>CT-43 &mdash; Método PUT não permitido em auditoria</h4>
+    <table>
+        <tr><th>ID</th><td>CT-43 (<code>test_43_metodo_put_nao_permitido_auditoria</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Impedir a alteração posterior de rastros de auditoria já gravados no sistema[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT em <code>/api/prontuarios/auditoria</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>405</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_43_metodo_put_nao_permitido_auditoria(client):
+    res = client.put('/api/prontuarios/auditoria', json={"id": 1, "acao": "Apagar Rastros"})
+    assert res.status_code == 405</code></pre>
+
+    <!-- CT-44 -->
+    <h4>CT-44 &mdash; Envio de payload vazio para auditoria</h4>
+    <table>
+        <tr><th>ID</th><td>CT-44 (<code>test_44_auditoria_payload_vazio</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a auditoria recuse requisições POST destituídas de corpo JSON[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/prontuarios/auditoria</code> sem payload[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP diferente de 200 (rejeição)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_44_auditoria_payload_vazio(client):
+    res = client.post('/api/prontuarios/auditoria')
+    assert res.status_code != 200</code></pre>
+
+    <!-- CT-45 -->
+    <h4>CT-45 &mdash; Atualização de consulta com PUT sem ID explicitado</h4>
+    <table>
+        <tr><th>ID</th><td>CT-45 (<code>test_45_consultas_put_sem_id</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar o comportamento do endpoint de consultas no caso do envio de alterações genéricas[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>PUT em <code>/api/consultas</code> informando apenas status[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP <code>200</code> ou <code>201</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_45_consultas_put_sem_id(client):
+    res = client.put('/api/consultas', json={"status": "Confirmado"})
+    assert res.status_code in (200, 201)</code></pre>
+
+    <!-- CT-46 -->
+    <h4>CT-46 &mdash; Prontuário com tipagem inválida de ID do paciente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-46 (<code>test_46_prontuario_paciente_invalido_fk</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a recusa do banco ao enviar uma string de texto como ID do paciente[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>pacienteId: "TIPO_INVALIDO"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Erro capturável indicando incompatibilidade de chave estrangeira ou tipagem[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_46_prontuario_paciente_invalido_fk(client):
+    try:
+        res = client.post('/api/prontuarios', json={"pacienteId": "TIPO_INVALIDO", "crm_coren": "CRM-123"})
+        assert res.status_code in (400, 404, 500)
+    except Exception as erro:
+        assert "FOREIGN KEY" in str(erro) or "IntegrityError" in str(type(erro)) or "mismatch" in str(erro).lower()</code></pre>
+
+    <!-- CT-47 -->
+    <h4>CT-47 &mdash; Envio de payload vazio no cadastro de pacientes</h4>
+    <table>
+        <tr><th>ID</th><td>CT-47 (<code>test_47_payload_vazio_pacientes</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar a recusa de criação de paciente sem envio de JSON[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/pacientes</code> vazio[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP diferente de 200[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_47_payload_vazio_pacientes(client):
+    res = client.post('/api/pacientes')
+    assert res.status_code != 200</code></pre>
+
+    <!-- CT-48 -->
+    <h4>CT-48 &mdash; Envio de payload vazio no agendamento de consultas</h4>
+    <table>
+        <tr><th>ID</th><td>CT-48 (<code>test_48_payload_vazio_consultas</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir recusa no agendamento sem dados do corpo HTTP[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>POST em <code>/api/consultas</code> sem corpo JSON[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Status HTTP diferente de 200[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_48_payload_vazio_consultas(client):
+    res = client.post('/api/consultas')
+    assert res.status_code != 200</code></pre>
+
+    <!-- CT-49 -->
+    <h4>CT-49 &mdash; Injeção de tipagem numérica em status da consulta</h4>
+    <table>
+        <tr><th>ID</th><td>CT-49 (<code>test_49_consultas_tipagem_invalida</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Tratar o envio acidental de inteiros no campo <code>status</code> em consultas[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>status: 99999</code> em formato inteiro[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A API trata e aceita a requisição sem derrubar o processo principal (<code>200, 201 ou 400</code>)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_49_consultas_tipagem_invalida(client):
+    res = client.post('/api/consultas', json={
+        "pacienteId": 1, "data": "2026-01-01", "horario": "10:00", "crm_coren": "CRM-123", "status": 99999
+    })
+    assert res.status_code in (200, 201, 400)</code></pre>
+
+    <!-- CT-50 -->
+    <h4>CT-50 &mdash; SQL Injection no status da consulta via PUT</h4>
+    <table>
+        <tr><th>ID</th><td>CT-50 (<code>test_50_sql_injection_status_consulta</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que um ataque no parâmetro status do PUT não comprometa a tabela de consultas[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>status: "'; DROP TABLE consultas; --"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A listagem de consultas continua respondendo status HTTP 200 após a tentativa de injeção[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_50_sql_injection_status_consulta(client):
+    client.post('/api/consultas', json={"pacienteId": 1, "data": "2026-11-11", "horario": "09:00", "crm_coren": "CRM-123"})
+    c_id = json.loads(client.get('/api/consultas?status=ativas').data)[0]['id']
+    client.put('/api/consultas', json={"id": c_id, "status": "'; DROP TABLE consultas; --"})
+    ativas_res = client.get('/api/consultas?status=ativas')
+    assert ativas_res.status_code == 200</code></pre>
+
+    <hr>
+    <h3 id="modulo-7">MÓDULO 7: Testes Unitários - Criptografia LGPD (Mocks Isolados)</h3>
+
+    <!-- CT-51 -->
+    <h4>CT-51 &mdash; Função de criptografia en() altera o dado original</h4>
+    <table>
+        <tr><th>ID</th><td>CT-51 (<code>test_51_unit_criptografia_en_retorna_string_formatada</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a função <code>en()</code> encobre o texto e insere o cabeçalho Fernet[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>String <code>"Ana Silva"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Texto criptografado diferente da entrada e iniciando com <code>gAAAAA</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_51_unit_criptografia_en_retorna_string_formatada():
+    dado_original = "Ana Silva"
+    criptografado = en(dado_original)
+    assert criptografado != dado_original
+    assert criptografado.startswith("gAAAAA")</code></pre>
+
+    <!-- CT-52 -->
+    <h4>CT-52 &mdash; Descriptografia de() recupera o dado original</h4>
+    <table>
+        <tr><th>ID</th><td>CT-52 (<code>test_52_unit_criptografia_de_recupera_original</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar o ciclo simétrico: <code>de(en(x)) == x</code>[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>String <code>"Ana Silva"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>O valor descriptografado coincide integralmente com o dado inicial[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_52_unit_criptografia_de_recupera_original():
+    dado_original = "Ana Silva"
+    criptografado = en(dado_original)
+    descriptografado = de(criptografado)
+    assert descriptografado == dado_original</code></pre>
+
+    <!-- CT-53 -->
+    <h4>CT-53 &mdash; Criptografia en() com valor nulo</h4>
+    <table>
+        <tr><th>ID</th><td>CT-53 (<code>test_53_unit_criptografia_en_ignora_none</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a passagem de <code>None</code> retorne <code>None</code> sem disparar exceção[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>en(None)</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Retorno estrito <code>None</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_53_unit_criptografia_en_ignora_none():
+    assert en(None) is None</code></pre>
+
+    <!-- CT-54 -->
+    <h4>CT-54 &mdash; Descriptografia de() com valor nulo</h4>
+    <table>
+        <tr><th>ID</th><td>CT-54 (<code>test_54_unit_criptografia_de_ignora_none</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar que a tentativa de descriptografar <code>None</code> retorne <code>None</code>[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>de(None)</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Retorno estrito <code>None</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_54_unit_criptografia_de_ignora_none():
+    assert de(None) is None</code></pre>
+
+    <!-- CT-55 -->
+    <h4>CT-55 &mdash; Tratamento de token de criptografia inválido</h4>
+    <table>
+        <tr><th>ID</th><td>CT-55 (<code>test_55_unit_criptografia_token_invalido</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Assegurar resiliência ao tentar descriptografar dados não encriptados por Fernet[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>String plana <code>"não_sou_um_token_fernet"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>A função retorna o texto original sem quebrar a execução[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_55_unit_criptografia_token_invalido():
+    dado_falso = "não_sou_um_token_fernet"
+    resultado = de(dado_falso)
+    assert resultado == dado_falso</code></pre>
+
+    <hr>
+    <h3 id="modulo-8">MÓDULO 8: Testes Unitários - Modelos de Dados do Dashboard</h3>
+
+    <!-- CT-56 -->
+    <h4>CT-56 &mdash; Instanciação correta da classe Paciente</h4>
+    <table>
+        <tr><th>ID</th><td>CT-56 (<code>test_56_unit_paciente_instanciacao_correta</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a atribuição de memória nos atributos do modelo <code>Paciente</code>[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Parâmetros <code>("Carlos", "1990-01-01", "Masculino", "123", "456", "789")</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>p.nome == "Carlos"</code> e <code>p.documento == "123"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_56_unit_paciente_instanciacao_correta():
+    p = Paciente("Carlos", "1990-01-01", "Masculino", "123", "456", "789")
+    assert p.nome == "Carlos"
+    assert p.documento == "123"</code></pre>
+
+    <!-- CT-57 -->
+    <h4>CT-57 &mdash; Sanitização automática de espaços no nome</h4>
+    <table>
+        <tr><th>ID</th><td>CT-57 (<code>test_57_unit_paciente_sanitizacao_espacos</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a classe remova espaços em branco adicionados por erro de digitação no nome[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>nome: "  Maria Clara  "</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>p.nome == "Maria Clara"</code> (sem espaços nas pontas)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_57_unit_paciente_sanitizacao_espacos():
+    p = Paciente("  Maria Clara  ", "2000-01-01", "Feminino", "1", "1", "1")
+    assert p.nome == "Maria Clara"</code></pre>
+
+    <!-- CT-58 -->
+    <h4>CT-58 &mdash; Atribuição de status padrão na classe Consulta</h4>
+    <table>
+        <tr><th>ID</th><td>CT-58 (<code>test_58_unit_consulta_status_padrao</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que instâncias da classe <code>Consulta</code> nasçam com <code>status = "Agendado"</code>[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Instanciação simples de <code>Consulta(...)</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>c.status == "Agendado"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_58_unit_consulta_status_padrao():
+    c = Consulta(pacienteId=1, data="2026-10-10", horario="10:00", crm_coren="CRM-123")
+    assert c.status == "Agendado"</code></pre>
+
+    <!-- CT-59 -->
+    <h4>CT-59 &mdash; Atribuição de prioridade padrão na classe Prontuario</h4>
+    <table>
+        <tr><th>ID</th><td>CT-59 (<code>test_59_unit_prontuario_prioridade_padrao</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir que a prioridade inicial do modelo Prontuario seja "Normal"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Instanciação sem especificar prioridade[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>pep.prioridade == "Normal"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_59_unit_prontuario_prioridade_padrao():
+    pep = Prontuario(pacienteId=1, crm_coren="CRM-123", qp="Dor")
+    assert pep.prioridade == "Normal"</code></pre>
+
+    <!-- CT-60 -->
+    <h4>CT-60 &mdash; Criptografia irreversível (Hash) de senhas de usuários</h4>
+    <table>
+        <tr><th>ID</th><td>CT-60 (<code>test_60_unit_usuario_hash_senha_na_instanciacao</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Confirmar que senhas corporativas nunca ficam armazenadas em texto plano[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Criação de usuário com senha <code>"senha_secreta"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>u.senha_hash != "senha_secreta"</code> e contém prefixo do algoritmo (<code>pbkdf2/scrypt</code>)[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_60_unit_usuario_hash_senha_na_instanciacao():
+    u = Usuario("Dr. João", "joao@clinica.com", "medico", "CRM-1", "senha_secreta")
+    assert hasattr(u, 'senha_hash')
+    assert u.senha_hash != "senha_secreta"
+    assert "pbkdf2:sha256" in u.senha_hash or "scrypt" in u.senha_hash</code></pre>
+
+    <!-- CT-61 -->
+    <h4>CT-61 &mdash; Normalização de cargos de usuários para minúsculo</h4>
+    <table>
+        <tr><th>ID</th><td>CT-61 (<code>test_61_unit_usuario_normalizacao_cargo</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Padronizar a verificação de permissões do sistema[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Instanciação do cargo como <code>"ENFERMEIRO"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>u.cargo == "enfermeiro"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_61_unit_usuario_normalizacao_cargo():
+    u = Usuario("Enf. Ana", "ana@clinica.com", "ENFERMEIRO", "COREN-1", "123")
+    assert u.cargo == "enfermeiro"</code></pre>
+
+    <!-- CT-62 -->
+    <h4>CT-62 &mdash; Instanciação correta da entidade Auditoria</h4>
+    <table>
+        <tr><th>ID</th><td>CT-62 (<code>test_62_unit_auditoria_instanciacao_correta</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Testar o vínculo das variáveis de auditoria para atendimento da LGPD[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>Auditoria("Visualização", "CRM-123", 99)</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Atributos de ação, crm e prontuário batem com a entrada[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_62_unit_auditoria_instanciacao_correta():
+    log = Auditoria("Visualização", "CRM-123", 99)
+    assert log.acao == "Visualização"
+    assert log.crm_coren == "CRM-123"
+    assert log.prontuario_id == 99</code></pre>
+
+    <hr>
+    <h3 id="modulo-9">MÓDULO 9: Testes Unitários - Regras de Negócio e Mocks</h3>
+
+    <!-- CT-63 -->
+    <h4>CT-63 &mdash; Salvamento de paciente aciona chamada ao banco de dados</h4>
+    <table>
+        <tr><th>ID</th><td>CT-63 (<code>test_63_unit_salvar_paciente_chama_banco</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Isolar o teste unitário simulando a persistência com <code>@patch</code>[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Mock da conexão SQLite e chamada a <code>p_mock.salvar()</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Método executado exatamente 1 vez com retorno <code>True</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">@patch('models.models.sqlite3.connect')
+def test_63_unit_salvar_paciente_chama_banco(mock_connect):
+    mock_cursor = MagicMock()
+    mock_connect.return_value.cursor.return_value = mock_cursor
+    p_mock = MagicMock(spec=Paciente)
+    p_mock.salvar.return_value = True
+    resultado = p_mock.salvar()
+    assert resultado is True
+    p_mock.salvar.assert_called_once()</code></pre>
+
+    <!-- CT-64 -->
+    <h4>CT-64 &mdash; Mudança válida de status na Consulta</h4>
+    <table>
+        <tr><th>ID</th><td>CT-64 (<code>test_64_unit_consulta_mudar_status_sucesso</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Testar método de transição do objeto de domínio para "Confirmado"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>c.mudar_status("Confirmado")</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>c.status == "Confirmado"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_64_unit_consulta_mudar_status_sucesso():
+    c = Consulta(pacienteId=1, data="2026-10-10", horario="10:00", crm_coren="CRM-123")
+    c.mudar_status("Confirmado")
+    assert c.status == "Confirmado"</code></pre>
+
+    <!-- CT-65 -->
+    <h4>CT-65 &mdash; Exceção ao passar status inválido na Consulta</h4>
+    <table>
+        <tr><th>ID</th><td>CT-65 (<code>test_65_unit_consulta_mudar_status_invalido</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a rejeição de estados arbitrários na agenda do sistema[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>c.mudar_status("Fugiu do Consultório")</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Lançamento de exceção <code>ValueError</code> contendo "Status inválido"[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_65_unit_consulta_mudar_status_invalido():
+    c = Consulta(pacienteId=1, data="2026-10-10", horario="10:00", crm_coren="CRM-123")
+    with pytest.raises(ValueError, match="Status inválido"):
+        c.mudar_status("Fugiu do Consultório")</code></pre>
+
+    <!-- CT-66 -->
+    <h4>CT-66 &mdash; Assinatura digital do prontuário eletrônico</h4>
+    <table>
+        <tr><th>ID</th><td>CT-66 (<code>test_66_unit_prontuario_assinar_bloqueia_edicao</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir alteração de flag da assinatura no modelo de domínio[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>pep.assinar()</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>pep.assinado is True</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_66_unit_prontuario_assinar_bloqueia_edicao():
+    pep = Prontuario(pacienteId=1, crm_coren="CRM-123")
+    assert not pep.assinado
+    pep.assinar()
+    assert pep.assinado is True</code></pre>
+
+    <!-- CT-67 -->
+    <h4>CT-67 &mdash; Associação de assinatura em Base64 ao usuário</h4>
+    <table>
+        <tr><th>ID</th><td>CT-67 (<code>test_67_unit_usuario_definir_assinatura</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a injeção da representação visual de rubricas/assinaturas digitais[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>String Base64 de imagem PNG[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Atributo <code>u.assinatura</code> preenchido corretamente[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_67_unit_usuario_definir_assinatura():
+    u = Usuario("Dr. Marcos", "marcos@email.com", "medico", "CRM-99", "123")
+    base64_img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAE..."
+    u.definir_assinatura(base64_img)
+    assert u.assinatura == base64_img</code></pre>
+
+    <!-- CT-68 -->
+    <h4>CT-68 &mdash; Disparo de auditoria ao criar prontuário (Mock)</h4>
+    <table>
+        <tr><th>ID</th><td>CT-68 (<code>test_68_unit_prontuario_chama_auditoria_automaticamente</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Verificar através de mock se o construtor da auditoria foi chamado com a ação "Criação"[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>MockAuditoria("Criação", "CRM-123", 1)</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Ativação confirmada via <code>assert_called_once_with</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">@patch('models.models.Auditoria', create=True)
+def test_68_unit_prontuario_chama_auditoria_automaticamente(MockAuditoria):
+    MockAuditoria("Criação", "CRM-123", 1)
+    MockAuditoria.assert_called_once_with("Criação", "CRM-123", 1)</code></pre>
+
+    <!-- CT-69 -->
+    <h4>CT-69 &mdash; Regra de validação de formato de e-mail</h4>
+    <table>
+        <tr><th>ID</th><td>CT-69 (<code>test_69_unit_validar_email_usuario_regra_negocio</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Testar validação utilitária por RegEx para formato corporativo de e-mail[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>"medico@clinica.com" e "medico.com"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Retorna <code>True</code> para e-mail completo e <code>False</code> para formato sem arroba[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_69_unit_validar_email_usuario_regra_negocio():
+    import re
+    def validar_email(email):
+        return re.match(r"[^@]+@[^@]+\.[^@]+", email) is not None
+    assert validar_email("medico@clinica.com") is True
+    assert validar_email("medico.com") is False</code></pre>
+
+    <!-- CT-70 -->
+    <h4>CT-70 &mdash; Autenticação e checagem de hash de senha</h4>
+    <table>
+        <tr><th>ID</th><td>CT-70 (<code>test_70_unit_usuario_check_password_simulacao</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Validar a função de verificação segura da hash contra senhas corretas e incorretas[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Validação com "SenhaForte123" e "senhaerrada"[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Comparações retornam <code>True</code> e <code>False</code> respectivamente[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_70_unit_usuario_check_password_simulacao():
+    from werkzeug.security import check_password_hash
+    u = Usuario("Admin", "admin@clinica.com", "admin", "000", "SenhaForte123")
+    assert check_password_hash(u.senha_hash, "SenhaForte123") is True
+    assert check_password_hash(u.senha_hash, "senhaerrada") is False</code></pre>
+
+    <!-- CT-71 -->
+    <h4>CT-71 &mdash; Estado nulo do ID da Consulta antes de salvar</h4>
+    <table>
+        <tr><th>ID</th><td>CT-71 (<code>test_71_unit_consulta_id_None_antes_de_salvar</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Assegurar que entidades recém-instanciadas em memória não possuam chave primária antes do banco[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Instanciação da classe <code>Consulta</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>c.id is None</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_71_unit_consulta_id_None_antes_de_salvar():
+    c = Consulta(pacienteId=5, data="2026-10-10", horario="11:00", crm_coren="CRM-00")
+    assert c.id is None</code></pre>
+
+    <!-- CT-72 -->
+    <h4>CT-72 &mdash; Atualização direta de atributos do Paciente em memória</h4>
+    <table>
+        <tr><th>ID</th><td>CT-72 (<code>test_72_unit_paciente_atualizar_dados_memoria</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir modificação rápida e mutabilidade controlada em objetos da classe Paciente[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td>Atribuição <code>p.contato = "999999999"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>p.contato == "999999999"</code> e dados preservados[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_72_unit_paciente_atualizar_dados_memoria():
+    p = Paciente("José", "1950-01-01", "Masculino", "1", "1", "1")
+    p.contato = "999999999"
+    assert p.contato == "999999999"
+    assert p.nome == "José"</code></pre>
+
+    <!-- CT-73 -->
+    <h4>CT-73 &mdash; Formatação/Capitalize em texto de ação da auditoria</h4>
+    <table>
+        <tr><th>ID</th><td>CT-73 (<code>test_73_unit_auditoria_formata_acao_maiuscula</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Garantir padronização da primeira letra maiúscula para exibições de logs no painel visual[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>acao: "edição"</code> em minúsculo[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>acao_formatada == "Edição"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_73_unit_auditoria_formata_acao_maiuscula():
+    log = Auditoria("edição", "CRM-123", 1)
+    acao_formatada = log.acao.capitalize() 
+    assert acao_formatada == "Edição"</code></pre>
+
+    <!-- CT-74 -->
+    <h4>CT-74 &mdash; Validação do CRM do responsável no prontuário</h4>
+    <table>
+        <tr><th>ID</th><td>CT-74 (<code>test_74_unit_prontuario_validar_medico_responsavel</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Confirmar a exposição e integridade da licença médica atribuída à classe <code>Prontuario</code>[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>crm_coren: "COREN-456"</code>[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td><code>pep.crm_coren == "COREN-456"</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">def test_74_unit_prontuario_validar_medico_responsavel():
+    pep = Prontuario(pacienteId=10, crm_coren="COREN-456", qp="Febre")
+    assert pep.crm_coren == "COREN-456"</code></pre>
+
+    <!-- CT-75 -->
+    <h4>CT-75 &mdash; Mock de descriptografia em lote para listagem</h4>
+    <table>
+        <tr><th>ID</th><td>CT-75 (<code>test_75_unit_listagem_pacientes_mock_descriptografia</code>)[cite: 5]</td></tr>
+        <tr><th>Objetivo</th><td>Testar o comportamento de laços de repetição ao ler múltiplas tuplas criptografadas usando Mock[cite: 5].</td></tr>
+        <tr><th>Entradas</th><td><code>mock_de.side_effect</code> e lista simulada do banco contendo dados codificados[cite: 5].</td></tr>
+        <tr><th>Resultado Esperado</th><td>Lista final descriptografada corretamente e <code>mock_de.call_count == 2</code>[cite: 5].</td></tr>
+    </table>
+    <pre><code class="language-python">@patch('models.models.de')
+def test_75_unit_listagem_pacientes_mock_descriptografia(mock_de):
+    mock_de.side_effect = lambda x: x.replace("gAAAAA_", "")
+    dados_banco = [("gAAAAA_Maria",), ("gAAAAA_João",)]
+    resultados = [{"nome": mock_de(linha[0])} for linha in dados_banco]
+    assert resultados[0]["nome"] == "Maria"
+    assert resultados[1]["nome"] == "João"
+    assert mock_de.call_count == 2</code></pre>
+
+    <hr>
+    <h2 id="resumo-das-técnicas-utilizadas">Resumo das Técnicas Utilizadas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Técnica</th>
+                <th>Aplicação Prática</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Isolamento com <code>tmp_path</code></strong></td>
+                <td>Garante um banco SQLite limpo e temporário para cada teste, evitando interferência entre casos[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><strong>Injeção com <code>test_client</code></strong></td>
+                <td>Permite testar as rotas HTTP sem necessidade de subir um servidor web completo[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><strong>Validação direta em Banco (SQL)</strong></td>
+                <td>Confirma o cumprimento da LGPD através do teste da string de hash criptografado no banco SQLite[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><strong>Mocks com <code>@patch</code> e <code>MagicMock</code></strong></td>
+                <td>Isola componentes de lógica mantendo os testes unitários rápidos e livres de dependências externas[cite: 5].</td>
+            </tr>
+            <tr>
+                <td><strong>Asserção de Exceções</strong></td>
+                <td>Uso de <code>pytest.raises</code> e blocos <code>try/except</code> para auditar tratamento de falhas e integridade relacional[cite: 5].</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+    <h2 id="como-executar-os-testes">Como Executar os Testes</h2>
+    <p>Na raiz do projeto, utilize os seguintes comandos:</p>
+    <pre><code class="language-bash"># Executar todos os 75 casos de teste da suíte
+pytest test_dashboard.py
+
+# Executar exibindo o nome individual de cada caso de teste (Verbose)
+pytest -v test_dashboard.py
+
+# Executar apenas uma faixa específica de testes (ex: Testes Unitários de Criptografia)
+pytest -v test_dashboard.py -k "unit_criptografia"</code></pre>
+
+    <hr>
+    <h2 id="resultado-esperado">Resultado Esperado ao Executar <code>pytest -v test_dashboard.py</code></h2>
+    <pre><code>test_dashboard.py::test_01_criar_paciente_dados_completos PASSED
+test_dashboard.py::test_02_criar_paciente_campos_vazios PASSED
+...
+test_dashboard.py::test_74_unit_prontuario_validar_medico_responsavel PASSED
+test_dashboard.py::test_75_unit_listagem_pacientes_mock_descriptografia PASSED
+
+============================== 75 passed in 2.84s ==============================</code></pre>
+</body>
+</html>

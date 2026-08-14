@@ -144,7 +144,7 @@ async function atualizarDropdownProfissionais() {
         
         const apenasMedicos = usuarios.filter(u => {
             const cargoDoUsuario = (u.admin || '').toLowerCase();
-            return cargoDoUsuario !== 'atendente';
+            return cargoDoUsuario == 'comum';
         });
 
         const optionsHTML = '<option value="">Selecione o Médico / Especialista...</option>' + 
